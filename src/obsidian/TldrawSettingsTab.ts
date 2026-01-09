@@ -22,11 +22,11 @@ export type FileDestinationsSettings = {
 	assetsFolder: string;
 	/**
 	 * Whether to show an input to confirm the path of the new file.
-	 * 
+	 *
 	 * By default, the input will be filled in with the path defined by {@linkcode FileDestinationsSettings.destinationMethod}
-	 * 
+	 *
 	 * The modal will also show the following options:
-	 * 
+	 *
 	 * - Colocate file, if there is an active file view
 	 * - Default attachment folder as defined in the Obsidian settings
 	 * - {@linkcode FileDestinationsSettings.defaultFolder}
@@ -37,15 +37,15 @@ export type FileDestinationsSettings = {
 	 */
 	defaultFolder: string,
 	/**
-	 * 
+	 *
 	 * # `colocate`
 	 * If this is true then create new tldraw files in the same folder as the active note or file view.
-	 * 
+	 *
 	 * If there is no active note or file view, then root directory is used.
-	 * 
+	 *
 	 * # `attachments-folder`
-	 * Use the attachments folder defined in the Obsidian "Files and links" settings. 
-	 * 
+	 * Use the attachments folder defined in the Obsidian "Files and links" settings.
+	 *
 	 */
 	destinationMethod: DestinationMethod,
 	/**
@@ -69,7 +69,7 @@ type DeprecatedFileDestinationSettings = {
 	folder?: string;
 	/**
 	 * @deprecated Migrate to {@linkcode TldrawPluginSettings.fileDestinations}
-	 * Use the attachments folder defined in the Obsidian "Files and links" settings. 
+	 * Use the attachments folder defined in the Obsidian "Files and links" settings.
 	 */
 	useAttachmentsFolder?: boolean;
 };
@@ -143,7 +143,7 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 	file?: {
 		/**
 		 * The alternative frontmatter key used to detect if the markdown file is a tldraw document.
-		 * 
+		 *
 		 * {@linkcode FRONTMATTER_KEY} will always be detected as a tldraw document even with this defined.
 		 */
 		altFrontmatterKey?: string,
@@ -155,6 +155,12 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 		 * Insert these tags in the frontmatter when creating a new document.
 		 */
 		customTags?: string[],
+	}
+	layerPanel?: {
+		/** Whether the layer panel is enabled */
+		enabled?: boolean;
+		/** Whether the panel starts collapsed */
+		defaultCollapsed?: boolean;
 	}
 }
 
@@ -186,7 +192,11 @@ export const DEFAULT_SETTINGS = {
 	},
 	file: {
 		insertTags: true,
-	}
+	},
+	layerPanel: {
+		enabled: false,
+		defaultCollapsed: true,
+	},
 } as const satisfies Partial<TldrawPluginSettings>;
 
 export class TldrawSettingsTab extends PluginSettingTab {

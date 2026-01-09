@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import {
 	DefaultMainMenu,
@@ -28,6 +29,7 @@ import PluginQuickActions from "./PluginQuickActions";
 import { lockZoomIcon } from "src/assets/data-icons";
 import { isObsidianThemeDark } from "src/utils/utils";
 import { TldrawInObsidianPluginProvider } from "src/contexts/plugin";
+import { TldrawSettingsProvider } from "src/contexts/tldraw-settings-context";
 import { PTLEditorBlockBlur } from "src/utils/dom-attributes";
 
 type TldrawAppOptions = {
@@ -237,34 +239,44 @@ const TldrawApp = ({ plugin, store,
 		else return !isObsidianThemeDark() ? undefined : 'tl-theme__dark';
 	}, [plugin]);
 
+	// Memoized function to determine shape visibility based on meta properties
+	const getShapeVisibility = useCallback((s: { meta: Record<string, unknown> }) => {
+		if (s.meta.force_show) return 'visible' as const;
+		if (s.meta.hidden) return 'hidden' as const;
+		return 'inherit' as const;
+	}, []);
+
 	return (
-		<div
-			className="tldraw-view-root"
-			// e.stopPropagation(); this line should solve the mobile swipe menus bug
-			// The bug only happens on the mobile version of Obsidian.
-			// When a user tries to interact with the tldraw canvas,
-			// Obsidian thinks they're swiping down, left, or right so it opens various menus.
-			// By preventing the event from propagating, we can prevent those actions menus from opening.
-			onTouchStart={(e) => e.stopPropagation()}
-			ref={editorContainerRef}
-			onFocus={(e) => {
-				setFocusedEditor(false, editor);
-			}}
-		>
-			<Tldraw
-				{...storeProps}
-				assetUrls={assetUrls.current}
-				hideUi={hideUi}
-				onUiEvent={onUiEvent}
-				overrides={overridesUi.current}
-				components={overridesUiComponents.current}
-				// Set this flag to false when a tldraw document is embed into markdown to prevent it from gaining focus when it is loaded.
-				autoFocus={false}
-				onMount={setAppState}
-				tools={tools}
-				className={fbWorkAroundClassname}
-			/>
-		</div>
+		<TldrawSettingsProvider settingsManager={plugin.settingsManager}>
+			<div
+				className="tldraw-view-root"
+				// e.stopPropagation(); this line should solve the mobile swipe menus bug
+				// The bug only happens on the mobile version of Obsidian.
+				// When a user tries to interact with the tldraw canvas,
+				// Obsidian thinks they're swiping down, left, or right so it opens various menus.
+				// By preventing the event from propagating, we can prevent those actions menus from opening.
+				onTouchStart={(e) => e.stopPropagation()}
+				ref={editorContainerRef}
+				onFocus={(e) => {
+					setFocusedEditor(false, editor);
+				}}
+			>
+				<Tldraw
+					{...storeProps}
+					assetUrls={assetUrls.current}
+					hideUi={hideUi}
+					onUiEvent={onUiEvent}
+					overrides={overridesUi.current}
+					components={overridesUiComponents.current}
+					// Set this flag to false when a tldraw document is embed into markdown to prevent it from gaining focus when it is loaded.
+					autoFocus={false}
+					onMount={setAppState}
+					tools={tools}
+					className={fbWorkAroundClassname}
+					getShapeVisibility={getShapeVisibility}
+				/>
+			</div>
+		</TldrawSettingsProvider>
 	);
 };
 

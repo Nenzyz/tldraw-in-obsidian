@@ -1,6 +1,6 @@
 @import url("tldraw/tldraw.css");
 
-/* 
+/*
 	!!! Please prefix all custom classes with 'ptl' !!!
 
 	Any classes prefixed with 'ptl' is a custom class (stands for plugin-tldraw).
@@ -9,11 +9,11 @@
 
 	Obsidian's button:not(.clickable-icon) is a troublesome selector/style. Since we do
 	not have control of Tldraw's underlying components and styles, we cannot just add
-	".clickable-icon" to all of Tldraw's buttons. We could add the classes manually using 
+	".clickable-icon" to all of Tldraw's buttons. We could add the classes manually using
 	native javascript APIs but we would be affecting the DOM directly which could cause problems
 	with Tldraw's react tree. The only solution I see is when there's a problematic override of
 	Tldraw's styles by Obsidian's button:not(.clickable-icon) is find the styles that are
-	affected (usually only background-color, box-shadow, and padding) and find what those styles 
+	affected (usually only background-color, box-shadow, and padding) and find what those styles
 	should be (classes prefixed with 'tl' or 'tlui' then find a way to increase the specificity over button:not(.clickable-icon) using selectors and paste in those styles. Look for the comments that start with 'OVERRIDING'.
 */
 
@@ -428,4 +428,189 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
     height: max-content;
     box-sizing: content-box;
     border-radius: var(--tl-radius-1);
+}
+
+/* ============================================
+   Layer Panel Styles
+   ============================================ */
+
+/* Layer Panel Container */
+.ptl-layer-panel-wrapper {
+	position: absolute;
+	left: 8px;
+	top: 48px;
+	bottom: 60px;
+	z-index: 300;
+	pointer-events: all;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.ptl-layer-panel-toggle-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-2);
+	background: var(--color-panel);
+	box-shadow: var(--shadow-2);
+	border: none;
+	outline: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--color-text-1);
+	transition: background-color 0.15s ease;
+}
+
+.ptl-layer-panel-toggle-btn:hover {
+	background: var(--color-muted-2);
+	color: var(--color-text);
+}
+
+.ptl-layer-panel {
+	width: 200px;
+	flex: 1;
+	min-height: 0;
+	background: var(--color-panel);
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-3);
+	box-shadow: var(--shadow-2);
+	overflow: hidden;
+}
+
+.ptl-layer-panel-header {
+	display: flex;
+	align-items: center;
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--color-divider);
+	background: var(--color-panel);
+	flex-shrink: 0;
+}
+
+.ptl-layer-panel-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--color-text);
+}
+
+.ptl-layer-panel-content {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+/* Shape Tree */
+.ptl-shape-tree {
+	display: flex;
+	flex-direction: column;
+}
+
+/* Shape Item */
+.ptl-shape-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 10px;
+	cursor: pointer;
+	transition: background-color 0.1s ease;
+	color: var(--color-text);
+	min-height: 32px;
+}
+
+.ptl-shape-item:hover {
+	background-color: var(--color-muted-2);
+}
+
+/* Selected shape */
+.ptl-shape-item-selected {
+	background-color: var(--color-selected);
+	color: var(--color-selected-contrast);
+}
+
+.ptl-shape-item-selected:hover {
+	background-color: var(--color-selected);
+}
+
+/* Child of selected shape (for hierarchy indication) */
+.ptl-shape-item-child-selected {
+	background-color: var(--color-muted-1);
+}
+
+/* Hidden shape */
+.ptl-shape-item-hidden {
+	opacity: 0.5;
+}
+
+/* Shape Name */
+.ptl-shape-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex: 1;
+	min-width: 0;
+	font-size: 12px;
+}
+
+/* Shape Name Input (for renaming) */
+.ptl-shape-name-input {
+	border: none;
+	background: var(--color-background);
+	width: 0;
+	flex-grow: 1;
+	padding: 2px 4px;
+	font-size: 12px;
+	color: var(--color-text);
+	border-radius: var(--radius-2);
+	outline: 1px solid var(--color-selected);
+}
+
+.ptl-shape-name-input:focus {
+	outline: 2px solid var(--color-selected);
+}
+
+/* Visibility Toggle Button */
+.ptl-shape-visibility-toggle {
+	padding: 3px 6px;
+	border-radius: var(--radius-2);
+	outline: none;
+	border: none;
+	background: none;
+	flex-shrink: 0;
+	color: var(--color-text-1);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ptl-shape-visibility-toggle:hover {
+	background-color: var(--color-muted-2);
+	color: var(--color-text);
+}
+
+/* Ensure visibility toggle stays visible even when shape item is selected */
+.ptl-shape-item-selected .ptl-shape-visibility-toggle {
+	color: var(--color-selected-contrast);
+}
+
+.ptl-shape-item-selected .ptl-shape-visibility-toggle:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Override Obsidian button styles for layer panel buttons */
+.tldraw-view-root .ptl-layer-panel button {
+	background-color: transparent;
+	box-shadow: none;
+	padding: 3px 6px;
+}
+
+.tldraw-view-root .ptl-layer-panel-toggle-btn {
+	background: var(--color-panel);
+	box-shadow: var(--shadow-2);
+}
+
+.tldraw-view-root .ptl-layer-panel-toggle-btn:hover {
+	background: var(--color-muted-2);
 }

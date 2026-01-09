@@ -36,6 +36,7 @@ export default class UserSettingsManager {
             embeds: embedsDefault,
             fileDestinations: fileDestinationsDefault,
             file: fileDefault,
+            layerPanel: layerPanelDefault,
             ...restDefault
         } = DEFAULT_SETTINGS;
         const {
@@ -43,6 +44,7 @@ export default class UserSettingsManager {
             fileDestinations,
             tldrawOptions,
             file,
+            layerPanel,
             ...rest
         } = await this.#plugin.loadData() as Partial<TldrawPluginSettings> || {};
 
@@ -51,6 +53,8 @@ export default class UserSettingsManager {
         const fileMerged = Object.assign(
             {}, fileDefault, file
         );
+
+        const layerPanelMerged = Object.assign({}, layerPanelDefault, layerPanel);
 
         const fileDestinationsMerged = Object.assign({}, fileDestinationsDefault,
             (() => {
@@ -83,6 +87,7 @@ export default class UserSettingsManager {
             fileDestinations: fileDestinationsMerged,
             tldrawOptions,
             file: fileMerged,
+            layerPanel: layerPanelMerged,
             ...restMerged
         };
 

@@ -15,5 +15,6 @@
 		"lib": ["DOM", "ESNext"],
 		"jsx": "react"
 	},
-	"include": ["**/*.ts", "**/*.tsx", "**/*.css"]
+	"include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.css"],
+	"exclude": ["agent-os/**/*", "vitest.config.ts", "src/test/**/*"]
 }

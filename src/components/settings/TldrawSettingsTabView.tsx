@@ -7,6 +7,7 @@ import TldrawEditorOptions from "./TldrawEditorOptions";
 import EmbedsSettings from "./EmbedsSettings";
 import AssetsSettings from "./AssetsSettings";
 import WorkspaceSettings from "./WorkspaceSettings";
+import EditorSettings from "./EditorSettings";
 
 const TABS = {
     'file': {
@@ -16,6 +17,10 @@ const TABS = {
     'workspace': {
         label: 'Workspace',
         Component: WorkspaceSettings,
+    },
+    'editor': {
+        label: 'Editor',
+        Component: EditorSettings,
     },
     'start-up': {
         label: 'Start up',
