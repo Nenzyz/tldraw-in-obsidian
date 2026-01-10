@@ -23,46 +23,68 @@
 	width: 100%;
 	height: 100%;
 
-	/* fixes some positioning problems that tldraw has due to bringing embedded into another app */
-	transform: translate3d(0, 0, 0);
-
 	/* Prevents Obsidian from displaying their tooltips */
 	--no-tooltip: true;
+
+	/* Prevent watermark from causing scrollbars (use clip instead of hidden to not affect tooltip positioning) */
+	overflow: clip;
+}
+
+/*
+ * Fix tooltip positioning: Obsidian's workspace containers have CSS properties
+ * that create new containing blocks for position:fixed elements.
+ * We must reset these on ALL ancestor containers up to the workspace root.
+ */
+.workspace-split,
+.workspace-tabs,
+.workspace-tab-container,
+.workspace-leaf,
+.workspace-leaf-content,
+div[data-type="tldraw-view"],
+div[data-type="tldraw-read-only"],
+div[data-type="tldraw-view"] > .view-content,
+div[data-type="tldraw-read-only"] > .view-content {
+	transform: none !important;
+	filter: none !important;
+	perspective: none !important;
+	contain: none !important;
+	will-change: auto !important;
+	backdrop-filter: none !important;
 }
 
 /* OVERRIDING button:not(.clickable-icon) back to tldraw's original styles: */
 .tldraw-view-root .tlui-button {
 	background-color: transparent;
 	color: currentColor;
-	padding: 0px 13px;
+	padding: 0px 12px;
 	box-shadow: none;
 }
 
 /* Overriding back to original style */
 .tldraw-view-root .tlui-button:disabled {
-	color: var(--color-text-3);
+	color: var(--tl-color-text-3);
 }
 
-/* Overriding back to original style */
-.tldraw-view-root .tlui-button__tool[aria-checked='true'] {
-	color: var(--color-selected-contrast);
+/* Overriding back to original style (v4 uses aria-pressed instead of aria-checked) */
+.tldraw-view-root .tlui-button__tool[aria-pressed='true'] {
+	color: var(--tl-color-selected-contrast);
 }
 
 .tldraw-view-root .ptl-quick-action-button-wrapper[data-selected=true] .tlui-button__icon {
-	color: var(--color-selected-contrast);
+	color: var(--tl-color-selected-contrast);
 }
 
 .tldraw-view-root .ptl-quick-action-button-wrapper[data-selected=true] .tlui-button::before {
 	content: "";
 	position: absolute;
 	inset: 4px;
-	border-radius: var(--radius-2);
-	background-color: var(--color-selected);
+	border-radius: var(--tl-radius-2);
+	background-color: var(--tl-color-selected);
 }
 
-/* OVERRIDING button:not(.clickable-icon) */
-.tldraw-view-root .tlui-button.tlui-help-menu__button {
-	background-color: var(--color-low);
+/* OVERRIDING button:not(.clickable-icon) for help button */
+.tldraw-view-root .tlui-button.tlui-button__help {
+	background-color: var(--tl-color-low);
 }
 
 .tldraw-view-root kbd {
@@ -450,33 +472,33 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 .ptl-layer-panel-toggle-btn {
 	width: 32px;
 	height: 32px;
-	border-radius: var(--radius-2);
-	background: var(--color-panel);
-	box-shadow: var(--shadow-2);
+	border-radius: var(--tl-radius-2);
+	background: var(--tl-color-panel);
+	box-shadow: var(--tl-shadow-2);
 	border: none;
 	outline: none;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: var(--color-text-1);
+	color: var(--tl-color-text-1);
 	transition: background-color 0.15s ease;
 }
 
 .ptl-layer-panel-toggle-btn:hover {
-	background: var(--color-muted-2);
-	color: var(--color-text);
+	background: var(--tl-color-muted-2);
+	color: var(--tl-color-text);
 }
 
 .ptl-layer-panel {
 	width: 200px;
 	flex: 1;
 	min-height: 0;
-	background: var(--color-panel);
+	background: var(--tl-color-panel);
 	display: flex;
 	flex-direction: column;
-	border-radius: var(--radius-3);
-	box-shadow: var(--shadow-2);
+	border-radius: var(--tl-radius-3);
+	box-shadow: var(--tl-shadow-2);
 	overflow: hidden;
 }
 
@@ -484,15 +506,15 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 	display: flex;
 	align-items: center;
 	padding: 8px 10px;
-	border-bottom: 1px solid var(--color-divider);
-	background: var(--color-panel);
+	border-bottom: 1px solid var(--tl-color-divider);
+	background: var(--tl-color-panel);
 	flex-shrink: 0;
 }
 
 .ptl-layer-panel-title {
 	font-size: 12px;
 	font-weight: 600;
-	color: var(--color-text);
+	color: var(--tl-color-text);
 }
 
 .ptl-layer-panel-content {
@@ -515,27 +537,27 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 	padding: 6px 10px;
 	cursor: pointer;
 	transition: background-color 0.1s ease;
-	color: var(--color-text);
+	color: var(--tl-color-text);
 	min-height: 32px;
 }
 
 .ptl-shape-item:hover {
-	background-color: var(--color-muted-2);
+	background-color: var(--tl-color-muted-2);
 }
 
 /* Selected shape */
 .ptl-shape-item-selected {
-	background-color: var(--color-selected);
-	color: var(--color-selected-contrast);
+	background-color: var(--tl-color-selected);
+	color: var(--tl-color-selected-contrast);
 }
 
 .ptl-shape-item-selected:hover {
-	background-color: var(--color-selected);
+	background-color: var(--tl-color-selected);
 }
 
 /* Child of selected shape (for hierarchy indication) */
 .ptl-shape-item-child-selected {
-	background-color: var(--color-muted-1);
+	background-color: var(--tl-color-muted-1);
 }
 
 /* Hidden shape */
@@ -556,29 +578,29 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 /* Shape Name Input (for renaming) */
 .ptl-shape-name-input {
 	border: none;
-	background: var(--color-background);
+	background: var(--tl-color-background);
 	width: 0;
 	flex-grow: 1;
 	padding: 2px 4px;
 	font-size: 12px;
-	color: var(--color-text);
-	border-radius: var(--radius-2);
-	outline: 1px solid var(--color-selected);
+	color: var(--tl-color-text);
+	border-radius: var(--tl-radius-2);
+	outline: 1px solid var(--tl-color-selected);
 }
 
 .ptl-shape-name-input:focus {
-	outline: 2px solid var(--color-selected);
+	outline: 2px solid var(--tl-color-selected);
 }
 
 /* Visibility Toggle Button */
 .ptl-shape-visibility-toggle {
 	padding: 3px 6px;
-	border-radius: var(--radius-2);
+	border-radius: var(--tl-radius-2);
 	outline: none;
 	border: none;
 	background: none;
 	flex-shrink: 0;
-	color: var(--color-text-1);
+	color: var(--tl-color-text-1);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -586,13 +608,13 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 }
 
 .ptl-shape-visibility-toggle:hover {
-	background-color: var(--color-muted-2);
-	color: var(--color-text);
+	background-color: var(--tl-color-muted-2);
+	color: var(--tl-color-text);
 }
 
 /* Ensure visibility toggle stays visible even when shape item is selected */
 .ptl-shape-item-selected .ptl-shape-visibility-toggle {
-	color: var(--color-selected-contrast);
+	color: var(--tl-color-selected-contrast);
 }
 
 .ptl-shape-item-selected .ptl-shape-visibility-toggle:hover {
@@ -607,10 +629,10 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 }
 
 .tldraw-view-root .ptl-layer-panel-toggle-btn {
-	background: var(--color-panel);
-	box-shadow: var(--shadow-2);
+	background: var(--tl-color-panel);
+	box-shadow: var(--tl-shadow-2);
 }
 
 .tldraw-view-root .ptl-layer-panel-toggle-btn:hover {
-	background: var(--color-muted-2);
+	background: var(--tl-color-muted-2);
 }
