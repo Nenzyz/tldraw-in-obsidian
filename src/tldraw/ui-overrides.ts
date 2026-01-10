@@ -2,6 +2,7 @@ import { Editor, TLExportType, TLImageExportOptions, TLUiActionItem, TLUiActions
 import { Platform } from "obsidian";
 import TldrawPlugin from "src/main";
 import { downloadBlob, getSaveFileCopyAction, getSaveFileCopyInVaultAction, importFileAction, OPEN_FILE_ACTION, SAVE_FILE_COPY_ACTION, SAVE_FILE_COPY_IN_VAULT_ACTION } from "src/utils/file";
+import LassoSelectTool from "./tools/lasso-select-tool";
 
 const DEFAULT_CAMERA_STEPS = [0.1, 0.25, 0.5, 1, 2, 4, 8];
 
@@ -11,12 +12,16 @@ export function uiOverrides(plugin: TldrawPlugin): TLUiOverrides {
 	const trackEvent = useUiEvents();
 	return {
 		tools(editor, tools, helpers) {
-			// console.log(tools);
-			// // this is how you would override the kbd shortcuts
-			// tools.draw = {
-			// 	...tools.draw,
-			// 	kbd: "!q",
-			// };
+			// Add lasso select tool
+			tools[LassoSelectTool.id] = {
+				id: LassoSelectTool.id,
+				label: 'Lasso' as any,
+				icon: 'lasso',
+				kbd: 's',
+				onSelect() {
+					editor.setCurrentTool(LassoSelectTool.id);
+				},
+			};
 			return tools;
 		},
 		actions: (editor, actions, { msg, addDialog, addToast, paste }) => {
@@ -67,24 +72,6 @@ export function uiOverrides(plugin: TldrawPlugin): TLUiOverrides {
 
 			return actions;
 		},
-		// toolbar(editor, toolbar, { tools }) {
-		// 	// console.log(toolbar);
-		// 	// toolbar.splice(4, 0, toolbarItem(tools.card))
-		// 	return toolbar;
-		// },
-		// keyboardShortcutsMenu(editor, keyboardShortcutsMenu, { tools }) {
-		// 	// console.log(keyboardShortcutsMenu);
-		// 	// const toolsGroup = keyboardShortcutsMenu.find(
-		// 	// 	(group) => group.id === 'shortcuts-dialog.tools'
-		// 	// ) as TLUiMenuGroup
-		// 	// toolsGroup.children.push(menuItem(tools.card))
-		// 	return keyboardShortcutsMenu;
-		// },
-		// contextMenu(editor, schema, helpers) {
-		// 	// console.log({ schema });
-		// 	// console.log(JSON.stringify(schema[0]));
-		// 	return schema;
-		// },
 	}
 }
 

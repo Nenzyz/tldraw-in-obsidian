@@ -5,13 +5,14 @@ import {
 	DefaultMainMenu,
 	DefaultMainMenuContent,
 	Editor,
+	StoreSnapshot,
 	TLComponents,
 	Tldraw,
 	TldrawEditorStoreProps,
 	TldrawUiMenuItem,
 	TldrawUiMenuSubmenu,
+	TLRecord,
 	TLStateNodeConstructor,
-	TLStoreSnapshot,
 	TLUiAssetUrlOverrides,
 	TLUiEventHandler,
 	TLUiOverrides,
@@ -26,11 +27,13 @@ import { useClickAwayListener } from "src/hooks/useClickAwayListener";
 import { TLDataDocumentStore } from "src/utils/document";
 import PluginKeyboardShortcutsDialog from "./PluginKeyboardShortcutsDialog";
 import PluginQuickActions from "./PluginQuickActions";
-import { lockZoomIcon } from "src/assets/data-icons";
+import { lockZoomIcon, lassoIcon } from "src/assets/data-icons";
 import { isObsidianThemeDark } from "src/utils/utils";
 import { TldrawInObsidianPluginProvider } from "src/contexts/plugin";
 import { TldrawSettingsProvider } from "src/contexts/tldraw-settings-context";
 import { PTLEditorBlockBlur } from "src/utils/dom-attributes";
+import { CustomToolbar } from "./CustomToolbar";
+import LassoOverlays from "./LassoOverlays";
 
 type TldrawAppOptions = {
 	iconAssetUrls?: TLUiAssetUrlOverrides['icons'],
@@ -51,11 +54,11 @@ type TldrawAppOptions = {
 	components?: TLComponents,
 	onEditorMount?: (editor: Editor) => void,
 	/**
-	 * 
+	 *
 	 * @param snapshot The snapshot that is initially loaded into the editor.
-	 * @returns 
+	 * @returns
 	 */
-	onInitialSnapshot?: (snapshot: TLStoreSnapshot) => void,
+	onInitialSnapshot?: (snapshot: StoreSnapshot<TLRecord>) => void,
 	/**
 	 * 
 	 * @param event 
@@ -102,6 +105,8 @@ const components = (plugin: TldrawPlugin): TLComponents => ({
 	),
 	KeyboardShortcutsDialog: PluginKeyboardShortcutsDialog,
 	QuickActions: PluginQuickActions,
+	Toolbar: CustomToolbar,
+	Overlays: LassoOverlays,
 });
 
 function LocalFileMenu(props: { plugin: TldrawPlugin }) {
@@ -149,7 +154,8 @@ const TldrawApp = ({ plugin, store,
 		icons: {
 			...plugin.getIconOverrides(),
 			...iconAssetUrls,
-			[PLUGIN_ACTION_TOGGLE_ZOOM_LOCK]: lockZoomIcon
+			[PLUGIN_ACTION_TOGGLE_ZOOM_LOCK]: lockZoomIcon,
+			'lasso': lassoIcon,
 		},
 	})
 	const overridesUi = React.useRef({
@@ -169,7 +175,7 @@ const TldrawApp = ({ plugin, store,
 	const setAppState = React.useCallback((editor: Editor) => {
 		setEditor(editor);
 		if (_onInitialSnapshot) {
-			_onInitialSnapshot(editor.store.getStoreSnapshot());
+			_onInitialSnapshot(editor.getSnapshot().document);
 			setOnInitialSnapshot(undefined);
 		}
 	}, [_onInitialSnapshot])
@@ -246,6 +252,9 @@ const TldrawApp = ({ plugin, store,
 		return 'inherit' as const;
 	}, []);
 
+	// Get the compact mode setting
+	const forceCompactMode = plugin.settings.ui?.forceCompactMode ?? false;
+
 	return (
 		<TldrawSettingsProvider settingsManager={plugin.settingsManager}>
 			<div
@@ -274,6 +283,7 @@ const TldrawApp = ({ plugin, store,
 					tools={tools}
 					className={fbWorkAroundClassname}
 					getShapeVisibility={getShapeVisibility}
+					forceMobile={forceCompactMode}
 				/>
 			</div>
 		</TldrawSettingsProvider>

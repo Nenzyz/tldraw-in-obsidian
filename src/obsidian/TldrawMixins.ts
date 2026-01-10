@@ -6,6 +6,7 @@ import { createRootAndRenderTldrawApp, TldrawAppProps, TldrawAppStoreProps } fro
 import TldrawAssetsModal from "./modal/TldrawAssetsModal";
 import { parseDeepLinkString, TLDeepLink } from "tldraw";
 import InFrontOfTheCanvas from "src/components/InFrontOfTheCanvas";
+import LassoSelectTool from "src/tldraw/tools/lasso-select-tool";
 
 /**
  * Implements overrides for {@linkcode FileView.onload} and {@linkcode FileView.onunload}
@@ -91,12 +92,9 @@ export function TldrawLoadableMixin<T extends abstract new (...args: any[]) => F
                 components: {
                     InFrontOfTheCanvas,
                 },
+                tools: [LassoSelectTool],
                 onEditorMount: (editor) => {
-                    const viewState = this.getEphemeralState();
-                    console.log(this.#deepLink)
-                    console.log({ viewState })
                     if (this.#deepLink) {
-                        console.log(this.#deepLink)
                         editor.navigateToDeepLink(this.#deepLink);
                         return;
                     }
