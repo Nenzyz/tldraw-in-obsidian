@@ -460,7 +460,7 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 .ptl-layer-panel-wrapper {
 	position: absolute;
 	left: 8px;
-	top: 48px;
+	top: 90px;
 	bottom: 60px;
 	z-index: 300;
 	pointer-events: all;
