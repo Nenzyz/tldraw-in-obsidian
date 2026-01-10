@@ -1,4 +1,4 @@
-import { AssetRecordType, createShapeId, Editor, TldrawFile, TLImageShape } from "tldraw";
+import { AssetRecordType, createShapeId, DefaultDashStyle, DefaultFillStyle, DefaultSizeStyle, Editor, TldrawFile, TLImageShape } from "tldraw";
 import * as React from "react";
 import TldrawPlugin from "src/main";
 import { TldrawPluginMetaData } from "src/utils/document";
@@ -155,6 +155,18 @@ export function useTldrawAppEffects({
             isDebugMode: debugMode,
             isFocusMode: focusMode,
         });
+
+        // Apply default shape styles
+        const { defaultFill, defaultDash, defaultSize } = settingsManager.settings.tldrawOptions ?? {};
+        if (defaultFill) {
+            editor.setStyleForNextShapes(DefaultFillStyle, defaultFill);
+        }
+        if (defaultDash) {
+            editor.setStyleForNextShapes(DefaultDashStyle, defaultDash);
+        }
+        if (defaultSize) {
+            editor.setStyleForNextShapes(DefaultSizeStyle, defaultSize);
+        }
 
         setFocusedEditor(editor);
         onEditorMount?.(editor);

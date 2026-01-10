@@ -122,6 +122,22 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 		 * When the laser tool is stopped, whether to keep the delay defined by `laserDelayMs`
 		 */
 		laserKeepDelayAfterStop?: boolean,
+		/**
+		 * Whether note shapes can be resized by the user
+		 */
+		noteResizable?: boolean,
+		/**
+		 * Default fill style for new shapes
+		 */
+		defaultFill?: 'none' | 'semi' | 'solid' | 'pattern',
+		/**
+		 * Default dash style for new shapes
+		 */
+		defaultDash?: 'draw' | 'solid' | 'dashed' | 'dotted',
+		/**
+		 * Default size for new shapes
+		 */
+		defaultSize?: 's' | 'm' | 'l' | 'xl',
 	}
 	/**
 	 * Options that apply to the editor camera
@@ -162,6 +178,26 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 		/** Whether the panel starts collapsed */
 		defaultCollapsed?: boolean;
 	}
+	/**
+	 * Settings for managing image and SVG assets
+	 */
+	assets?: {
+		/**
+		 * Template for naming image files when pasted or dropped into tldraw.
+		 * Supports variables: {notename}, {imagename}, {date:FORMAT}, {timestamp}, {uuid}, {uuid:short}
+		 */
+		imageNameTemplate?: string;
+	}
+	/**
+	 * UI customization options
+	 */
+	ui?: {
+		/**
+		 * Force the compact (mobile) UI mode even on desktop.
+		 * This provides a more streamlined interface with smaller controls.
+		 */
+		forceCompactMode?: boolean;
+	}
 }
 
 export const DEFAULT_SETTINGS = {
@@ -196,6 +232,12 @@ export const DEFAULT_SETTINGS = {
 	layerPanel: {
 		enabled: false,
 		defaultCollapsed: true,
+	},
+	assets: {
+		imageNameTemplate: '{uuid:short}-{imagename}',
+	},
+	ui: {
+		forceCompactMode: false,
 	},
 } as const satisfies Partial<TldrawPluginSettings>;
 

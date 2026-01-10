@@ -1,10 +1,11 @@
 import * as React from "react";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import {
 	DefaultMainMenu,
 	DefaultMainMenuContent,
 	Editor,
+	NoteShapeUtil,
 	StoreSnapshot,
 	TLComponents,
 	Tldraw,
@@ -255,6 +256,15 @@ const TldrawApp = ({ plugin, store,
 	// Get the compact mode setting
 	const forceCompactMode = plugin.settings.ui?.forceCompactMode ?? false;
 
+	// Configure note shape resizability based on setting
+	const noteResizable = plugin.settings.tldrawOptions?.noteResizable ?? false;
+	const shapeUtils = useMemo(() => {
+		if (noteResizable) {
+			return [NoteShapeUtil.configure({ resizeMode: 'scale' })];
+		}
+		return undefined;
+	}, [noteResizable]);
+
 	return (
 		<TldrawSettingsProvider settingsManager={plugin.settingsManager}>
 			<div
@@ -277,6 +287,7 @@ const TldrawApp = ({ plugin, store,
 					onUiEvent={onUiEvent}
 					overrides={overridesUi.current}
 					components={overridesUiComponents.current}
+					shapeUtils={shapeUtils}
 					// Set this flag to false when a tldraw document is embed into markdown to prevent it from gaining focus when it is loaded.
 					autoFocus={false}
 					onMount={setAppState}

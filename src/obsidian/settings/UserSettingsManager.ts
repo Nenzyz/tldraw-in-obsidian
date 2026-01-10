@@ -183,4 +183,56 @@ export default class UserSettingsManager {
         this.#plugin.settings.clipboard = Object.assign({}, options);
         this.updateSettings(this.#plugin.settings);
     }
+
+    async updateNoteResizable(noteResizable: UserTldrawOptions['noteResizable']) {
+        let tldrawOptions = this.#plugin.settings.tldrawOptions;
+        if (noteResizable === tldrawOptions?.noteResizable) return;
+        if (noteResizable === undefined) {
+            delete tldrawOptions?.noteResizable;
+        } else {
+            if (!tldrawOptions) tldrawOptions = {};
+            tldrawOptions.noteResizable = noteResizable;
+        }
+        this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
+        this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateDefaultFill(defaultFill: UserTldrawOptions['defaultFill']) {
+        let tldrawOptions = this.#plugin.settings.tldrawOptions;
+        if (defaultFill === tldrawOptions?.defaultFill) return;
+        if (defaultFill === undefined) {
+            delete tldrawOptions?.defaultFill;
+        } else {
+            if (!tldrawOptions) tldrawOptions = {};
+            tldrawOptions.defaultFill = defaultFill;
+        }
+        this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
+        this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateDefaultDash(defaultDash: UserTldrawOptions['defaultDash']) {
+        let tldrawOptions = this.#plugin.settings.tldrawOptions;
+        if (defaultDash === tldrawOptions?.defaultDash) return;
+        if (defaultDash === undefined) {
+            delete tldrawOptions?.defaultDash;
+        } else {
+            if (!tldrawOptions) tldrawOptions = {};
+            tldrawOptions.defaultDash = defaultDash;
+        }
+        this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
+        this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateDefaultSize(defaultSize: UserTldrawOptions['defaultSize']) {
+        let tldrawOptions = this.#plugin.settings.tldrawOptions;
+        if (defaultSize === tldrawOptions?.defaultSize) return;
+        if (defaultSize === undefined) {
+            delete tldrawOptions?.defaultSize;
+        } else {
+            if (!tldrawOptions) tldrawOptions = {};
+            tldrawOptions.defaultSize = defaultSize;
+        }
+        this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
+        this.updateSettings(this.#plugin.settings);
+    }
 }
