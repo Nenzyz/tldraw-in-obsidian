@@ -98,7 +98,11 @@ export function TldrawLoadableMixin<T extends abstract new (...args: any[]) => F
                         editor.navigateToDeepLink(this.#deepLink);
                         return;
                     }
-                    return editor.zoomToFit();
+                    // Defer zoomToFit to ensure viewport dimensions are ready
+                    // This fixes the issue where first load shows wrong zoom
+                    requestAnimationFrame(() => {
+                        editor.zoomToFit();
+                    });
                 }
             };
         }
