@@ -2,7 +2,7 @@ import { CachedMetadata, Notice, TFile } from "obsidian";
 import TldrawPlugin from "src/main";
 import { TldrawFileListener } from "src/obsidian/plugin/TldrawFileListenerMap";
 import { createAttachmentFilepath } from "src/utils/utils";
-import { DEFAULT_SUPPORTED_IMAGE_TYPES, TLAsset, TLAssetContext, TLAssetStore, TLImageAsset } from "tldraw";
+import { DEFAULT_SUPPORTED_IMAGE_TYPES, TLAsset, TLAssetContext, TLAssetId, TLAssetStore, TLImageAsset } from "tldraw";
 import { TldrawStoreIndexedDB } from "./indexeddb-store";
 import { vaultFileToBlob } from "src/obsidian/helpers/vault";
 import { createImageAsset } from "./helpers/create-asset";
@@ -290,6 +290,16 @@ export class ObsidianTLAssetStore implements TLAssetStore {
         }
 
         return this.proxy.getCached(assetId as BlockRefAssetId)
+    }
+
+    /**
+     * Required by tldraw v4's TLAssetStore interface.
+     * Currently a no-op since assets are stored as block references in the markdown file.
+     */
+    async remove(assetIds: TLAssetId[]): Promise<void> {
+        // Assets are stored as block references in the markdown file.
+        // We don't automatically delete them to preserve the user's file structure.
+        // Users can manually remove unused asset links from their markdown files.
     }
 
     async getFromMarkdown(assetSrc: BlockRefAssetId) {

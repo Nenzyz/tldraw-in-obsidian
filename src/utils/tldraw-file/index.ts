@@ -1,4 +1,4 @@
-import { createTLStore, TldrawFile, TLStore } from "tldraw"
+import { createTLStore, defaultBindingUtils, defaultShapeUtils, TldrawFile, TLStore } from "tldraw"
 
 /**
  * 
@@ -6,7 +6,10 @@ import { createTLStore, TldrawFile, TLStore } from "tldraw"
  * @returns 
  */
 export function createRawTldrawFile(store?: TLStore): TldrawFile {
-    store ??= createTLStore();
+    store ??= createTLStore({
+        shapeUtils: defaultShapeUtils,
+        bindingUtils: defaultBindingUtils,
+    });
 	return {
 		tldrawFileFormatVersion: 1,
 		schema: store.schema.serialize(),

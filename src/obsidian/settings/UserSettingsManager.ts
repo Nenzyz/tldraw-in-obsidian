@@ -235,4 +235,17 @@ export default class UserSettingsManager {
         this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
         this.updateSettings(this.#plugin.settings);
     }
+
+    async updateStrokeSizes(strokeSizes: UserTldrawOptions['strokeSizes']) {
+        let tldrawOptions = this.#plugin.settings.tldrawOptions;
+        if (JSON.stringify(strokeSizes) === JSON.stringify(tldrawOptions?.strokeSizes)) return;
+        if (strokeSizes === undefined) {
+            delete tldrawOptions?.strokeSizes;
+        } else {
+            if (!tldrawOptions) tldrawOptions = {};
+            tldrawOptions.strokeSizes = strokeSizes;
+        }
+        this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
+        this.updateSettings(this.#plugin.settings);
+    }
 }

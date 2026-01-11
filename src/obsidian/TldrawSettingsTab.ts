@@ -138,6 +138,15 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 		 * Default size for new shapes
 		 */
 		defaultSize?: 's' | 'm' | 'l' | 'xl',
+		/**
+		 * Custom stroke size values (overrides tldraw defaults)
+		 */
+		strokeSizes?: {
+			s: number,
+			m: number,
+			l: number,
+			xl: number,
+		},
 	}
 	/**
 	 * Options that apply to the editor camera

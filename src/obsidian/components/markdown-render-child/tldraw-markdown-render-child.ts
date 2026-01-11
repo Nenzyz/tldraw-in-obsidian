@@ -80,7 +80,6 @@ export class TldrawMarkdownRenderChild extends MarkdownRenderChild {
                     else if (themeMode === "light") return false;
                     else return isObsidianThemeDark();
                 })(),
-                targetDocument: embed.containerEl.ownerDocument,
             },
         }, {
             getStoreInstance: () => this.#storeInstance,
@@ -465,10 +464,7 @@ export class TldrawMarkdownRenderChild extends MarkdownRenderChild {
         this.#storeInstance = this.plugin.tlDataDocumentStoreManager.register(this.context.tFile, () => fileData, () => {
             this.#dataUpdated();
         }, false);
-        this.#previewImage.setOptions({
-            ...this.#previewImage.options,
-            assets: this.#storeInstance.documentStore.store.props.assets,
-        });
+        // Assets are now handled internally by tldraw v4
         return this.#storeInstance;
     }
 

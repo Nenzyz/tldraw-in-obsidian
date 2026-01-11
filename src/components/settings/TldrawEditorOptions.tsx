@@ -4,6 +4,7 @@ import CameraOptionsSettings from "./CameraOptionsSettings";
 import useSettingsManager from "src/hooks/useSettingsManager";
 import useUserPluginSettings from "src/hooks/useUserPluginSettings";
 import { defaultTldrawOptions } from "tldraw";
+import { DEFAULT_SETTINGS } from "src/obsidian/TldrawSettingsTab";
 
 function TldrawEditorOptionsGroup() {
     const settingsManager = useSettingsManager();
@@ -93,6 +94,9 @@ const sizeOptions: Record<string, string> = {
     xl: 'Extra Large',
 };
 
+// Default tldraw stroke sizes
+const defaultStrokeSizes = { s: 2, m: 3.5, l: 5, xl: 10 };
+
 function ShapeOptionsGroup() {
     const settingsManager = useSettingsManager();
     const settings = useUserPluginSettings(settingsManager);
@@ -127,6 +131,25 @@ function ShapeOptionsGroup() {
 
     const resetDefaultSize = useCallback(async () => {
         await settingsManager.updateDefaultSize(undefined);
+    }, [settingsManager]);
+
+    const currentStrokeSizes = settings.tldrawOptions?.strokeSizes;
+
+    const onStrokeSizeChange = useCallback(async (size: 's' | 'm' | 'l' | 'xl', value: string) => {
+        const parsedValue = parseFloat(value);
+        if (Number.isNaN(parsedValue) || parsedValue <= 0) return;
+        const newSizes = {
+            s: currentStrokeSizes?.s ?? defaultStrokeSizes.s,
+            m: currentStrokeSizes?.m ?? defaultStrokeSizes.m,
+            l: currentStrokeSizes?.l ?? defaultStrokeSizes.l,
+            xl: currentStrokeSizes?.xl ?? defaultStrokeSizes.xl,
+            [size]: parsedValue,
+        };
+        await settingsManager.updateStrokeSizes(newSizes);
+    }, [settingsManager, currentStrokeSizes]);
+
+    const resetStrokeSizes = useCallback(async () => {
+        await settingsManager.updateStrokeSizes(undefined);
     }, [settingsManager]);
 
     return (
@@ -210,6 +233,65 @@ function ShapeOptionsGroup() {
                     )
                 }}
             />
+            <Setting
+                slots={{
+                    name: 'Stroke size (S)',
+                    desc: `Small stroke size in pixels. Default: ${defaultStrokeSizes.s}`,
+                    control: (
+                        <Setting.Text
+                            value={`${currentStrokeSizes?.s ?? ''}`}
+                            placeholder={`${defaultStrokeSizes.s}`}
+                            onChange={(v) => onStrokeSizeChange('s', v)}
+                        />
+                    )
+                }}
+            />
+            <Setting
+                slots={{
+                    name: 'Stroke size (M)',
+                    desc: `Medium stroke size in pixels. Default: ${defaultStrokeSizes.m}`,
+                    control: (
+                        <Setting.Text
+                            value={`${currentStrokeSizes?.m ?? ''}`}
+                            placeholder={`${defaultStrokeSizes.m}`}
+                            onChange={(v) => onStrokeSizeChange('m', v)}
+                        />
+                    )
+                }}
+            />
+            <Setting
+                slots={{
+                    name: 'Stroke size (L)',
+                    desc: `Large stroke size in pixels. Default: ${defaultStrokeSizes.l}`,
+                    control: (
+                        <Setting.Text
+                            value={`${currentStrokeSizes?.l ?? ''}`}
+                            placeholder={`${defaultStrokeSizes.l}`}
+                            onChange={(v) => onStrokeSizeChange('l', v)}
+                        />
+                    )
+                }}
+            />
+            <Setting
+                slots={{
+                    name: 'Stroke size (XL)',
+                    desc: `Extra large stroke size in pixels. Default: ${defaultStrokeSizes.xl}`,
+                    control: (
+                        <>
+                            <Setting.Text
+                                value={`${currentStrokeSizes?.xl ?? ''}`}
+                                placeholder={`${defaultStrokeSizes.xl}`}
+                                onChange={(v) => onStrokeSizeChange('xl', v)}
+                            />
+                            <Setting.ExtraButton
+                                icon={'reset'}
+                                tooltip={'reset all stroke sizes'}
+                                onClick={resetStrokeSizes}
+                            />
+                        </>
+                    )
+                }}
+            />
         </>
     )
 }
@@ -256,9 +338,127 @@ function ClipboardOptionsGroup() {
     )
 }
 
+function LayerPanelGroup() {
+    const manager = useSettingsManager();
+    const settings = useUserPluginSettings(manager);
+
+    const onLayerPanelEnabledChanged = useCallback(async (value: boolean) => {
+        if (!manager.settings.layerPanel) {
+            manager.settings.layerPanel = {};
+        }
+        manager.settings.layerPanel.enabled = value;
+        await manager.updateSettings(manager.settings);
+    }, [manager]);
+
+    const onLayerPanelDefaultCollapsedChanged = useCallback(async (value: boolean) => {
+        if (!manager.settings.layerPanel) {
+            manager.settings.layerPanel = {};
+        }
+        manager.settings.layerPanel.defaultCollapsed = value;
+        await manager.updateSettings(manager.settings);
+    }, [manager]);
+
+    const layerPanelEnabled = settings.layerPanel?.enabled ?? DEFAULT_SETTINGS.layerPanel.enabled;
+    const layerPanelDefaultCollapsed = settings.layerPanel?.defaultCollapsed ?? DEFAULT_SETTINGS.layerPanel.defaultCollapsed;
+
+    return (
+        <>
+            <Setting
+                slots={{
+                    name: 'Enable layer panel',
+                    desc: (
+                        <>
+                            Show a panel that displays all shapes on the canvas, allowing you to select, rename, and toggle visibility of shapes.
+                            <code className="ptl-default-code">
+                                DEFAULT: {DEFAULT_SETTINGS.layerPanel.enabled ? 'On' : 'Off'}
+                            </code>
+                        </>
+                    ),
+                    control: (
+                        <Setting.Toggle
+                            value={layerPanelEnabled}
+                            onChange={onLayerPanelEnabledChanged}
+                        />
+                    )
+                }}
+            />
+            <Setting
+                slots={{
+                    name: 'Start collapsed',
+                    desc: (
+                        <>
+                            When enabled, the layer panel will start in a collapsed state.
+                            <code className="ptl-default-code">
+                                DEFAULT: {DEFAULT_SETTINGS.layerPanel.defaultCollapsed ? 'On' : 'Off'}
+                            </code>
+                        </>
+                    ),
+                    info: layerPanelEnabled ? undefined : (
+                        <p style={{ color: 'var(--color-yellow)' }}>Enable the layer panel above to change this setting</p>
+                    ),
+                    control: (
+                        <Setting.Toggle
+                            value={layerPanelDefaultCollapsed}
+                            onChange={onLayerPanelDefaultCollapsedChanged}
+                        />
+                    )
+                }}
+                disabled={!layerPanelEnabled}
+            />
+        </>
+    );
+}
+
+function UIOptionsGroup() {
+    const manager = useSettingsManager();
+    const settings = useUserPluginSettings(manager);
+
+    const onCompactModeChanged = useCallback(async (value: boolean) => {
+        if (!manager.settings.ui) {
+            manager.settings.ui = {};
+        }
+        manager.settings.ui.forceCompactMode = value;
+        await manager.updateSettings(manager.settings);
+    }, [manager]);
+
+    const forceCompactMode = settings.ui?.forceCompactMode ?? DEFAULT_SETTINGS.ui.forceCompactMode;
+
+    return (
+        <>
+            <Setting
+                slots={{
+                    name: 'Compact mode',
+                    desc: (
+                        <>
+                            Force the compact (mobile) UI mode even on desktop. This provides a more streamlined interface with smaller controls.
+                            <code className="ptl-default-code">
+                                DEFAULT: {DEFAULT_SETTINGS.ui.forceCompactMode ? 'On' : 'Off'}
+                            </code>
+                        </>
+                    ),
+                    control: (
+                        <Setting.Toggle
+                            value={forceCompactMode}
+                            onChange={onCompactModeChanged}
+                        />
+                    )
+                }}
+            />
+        </>
+    );
+}
+
 export default function TldrawEditorOptions() {
     return (
         <>
+            <h2>User interface</h2>
+            <Setting.Container>
+                <UIOptionsGroup />
+            </Setting.Container>
+            <h2>Layer panel</h2>
+            <Setting.Container>
+                <LayerPanelGroup />
+            </Setting.Container>
             <h2>Clipboard options</h2>
             <Setting.Container>
                 <ClipboardOptionsGroup />

@@ -1,5 +1,5 @@
 import { TLDataDocument, TLDataDocumentStore, TldrawPluginMetaData } from "src/utils/document";
-import { TLStore, createTLStore, defaultShapeUtils } from "tldraw";
+import { TLStore, createTLStore, defaultShapeUtils, defaultBindingUtils } from "tldraw";
 
 export function processInitialData(initialData: TLDataDocument): TLDataDocumentStore {
 	const { meta, store }: {
@@ -14,6 +14,7 @@ export function processInitialData(initialData: TLDataDocument): TLDataDocumentS
 			meta: initialData.meta,
 			store: createTLStore({
 				shapeUtils: defaultShapeUtils,
+				bindingUtils: defaultBindingUtils,
 				initialData: initialData.raw,
 			})
 		}

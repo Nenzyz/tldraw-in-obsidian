@@ -44,6 +44,50 @@ function AssetsSettingsGroup({
     );
 }
 
+function ImageNamingSettingsGroup() {
+    const settingsManager = useSettingsManager();
+    const settings = useUserPluginSettings(settingsManager);
+
+    const handleTemplateChange = useCallback(async (value: string) => {
+        settingsManager.settings.assets = {
+            ...settingsManager.settings.assets,
+            imageNameTemplate: value || '{uuid:short}-{imagename}',
+        };
+        await settingsManager.updateSettings(settingsManager.settings);
+    }, [settingsManager]);
+
+    return (
+        <>
+            <Setting
+                slots={{
+                    name: 'Image naming template',
+                    desc: (
+                        <>
+                            <p>Template for naming image files when pasted or dropped into tldraw.</p>
+                            <p><strong>Available variables:</strong></p>
+                            <ul style={{ marginTop: '0.5em', paddingLeft: '1.5em' }}>
+                                <li><code>{'{notename}'}</code> - Name of the current drawing file</li>
+                                <li><code>{'{imagename}'}</code> - Original image name (or "image" for clipboard)</li>
+                                <li><code>{'{date:FORMAT}'}</code> - Date using Moment.js format (e.g., {'{date:YYYY-MM-DD}'})</li>
+                                <li><code>{'{timestamp}'}</code> - Unix timestamp in milliseconds</li>
+                                <li><code>{'{uuid}'}</code> - Full UUID</li>
+                                <li><code>{'{uuid:short}'}</code> - Short UUID (first 8 characters)</li>
+                            </ul>
+                        </>
+                    ),
+                    control: (
+                        <Setting.Text
+                            value={settings.assets?.imageNameTemplate ?? '{uuid:short}-{imagename}'}
+                            placeholder="{uuid:short}-{imagename}"
+                            onChange={handleTemplateChange}
+                        />
+                    )
+                }}
+            />
+        </>
+    );
+}
+
 function FontAssetsSettingsGroup({
     downloadAll,
 }: {
@@ -484,6 +528,10 @@ export default function AssetsSettings() {
     return (
         <>
             <MemoAssetsSettingsGroup downloadAll={downloadAll} />
+            <h2>Image Naming</h2>
+            <Setting.Container>
+                <ImageNamingSettingsGroup />
+            </Setting.Container>
             <h2>Fonts</h2>
             <MemoFontAssetsSettingsGroup downloadAll={downloadAllFonts} downloadFont={downloadFont} manager={assetManagers.fonts} />
             <h2>Icons</h2>
