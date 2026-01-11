@@ -1,5 +1,5 @@
 import TldrawPlugin from "src/main";
-import { DEFAULT_SETTINGS, FileDestinationsSettings, TldrawPluginSettings, UserTLCameraOptions } from "../TldrawSettingsTab";
+import { AIModelInfo, AISettings, DEFAULT_SETTINGS, FileDestinationsSettings, TldrawPluginSettings, UserTLCameraOptions } from "../TldrawSettingsTab";
 
 type UserTldrawOptions = NonNullable<TldrawPluginSettings['tldrawOptions']>;
 
@@ -37,6 +37,7 @@ export default class UserSettingsManager {
             fileDestinations: fileDestinationsDefault,
             file: fileDefault,
             layerPanel: layerPanelDefault,
+            ai: aiDefault,
             ...restDefault
         } = DEFAULT_SETTINGS;
         const {
@@ -45,6 +46,7 @@ export default class UserSettingsManager {
             tldrawOptions,
             file,
             layerPanel,
+            ai,
             ...rest
         } = await this.#plugin.loadData() as Partial<TldrawPluginSettings> || {};
 
@@ -55,6 +57,8 @@ export default class UserSettingsManager {
         );
 
         const layerPanelMerged = Object.assign({}, layerPanelDefault, layerPanel);
+
+        const aiMerged = Object.assign({}, aiDefault, ai);
 
         const fileDestinationsMerged = Object.assign({}, fileDestinationsDefault,
             (() => {
@@ -88,6 +92,7 @@ export default class UserSettingsManager {
             tldrawOptions,
             file: fileMerged,
             layerPanel: layerPanelMerged,
+            ai: aiMerged,
             ...restMerged
         };
 
@@ -247,5 +252,60 @@ export default class UserSettingsManager {
         }
         this.#plugin.settings.tldrawOptions = Object.assign({}, tldrawOptions);
         this.updateSettings(this.#plugin.settings);
+    }
+
+    // AI Settings Methods
+
+    async updateAIEnabled(enabled: AISettings['enabled']) {
+        let aiSettings = this.#plugin.settings.ai;
+        if (enabled === aiSettings?.enabled) return;
+        if (!aiSettings) aiSettings = { ...DEFAULT_SETTINGS.ai };
+        aiSettings.enabled = enabled;
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateAIApiKey(apiKey: AISettings['apiKey']) {
+        let aiSettings = this.#plugin.settings.ai;
+        if (apiKey === aiSettings?.apiKey) return;
+        if (!aiSettings) aiSettings = { ...DEFAULT_SETTINGS.ai };
+        aiSettings.apiKey = apiKey;
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateAIModel(model: string) {
+        let aiSettings = this.#plugin.settings.ai;
+        if (model === aiSettings?.model) return;
+        if (!aiSettings) aiSettings = { ...DEFAULT_SETTINGS.ai };
+        aiSettings.model = model;
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateAIAvailableModels(models: AIModelInfo[]) {
+        let aiSettings = this.#plugin.settings.ai;
+        if (!aiSettings) aiSettings = { ...DEFAULT_SETTINGS.ai };
+        aiSettings.availableModels = models;
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateAIShowChatPanel(showChatPanel: AISettings['showChatPanel']) {
+        let aiSettings = this.#plugin.settings.ai;
+        if (showChatPanel === aiSettings?.showChatPanel) return;
+        if (!aiSettings) aiSettings = { ...DEFAULT_SETTINGS.ai };
+        aiSettings.showChatPanel = showChatPanel;
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
+    }
+
+    async updateAIMaxTokens(maxTokens: AISettings['maxTokens']) {
+        let aiSettings = this.#plugin.settings.ai;
+        if (maxTokens === aiSettings?.maxTokens) return;
+        if (!aiSettings) aiSettings = { ...DEFAULT_SETTINGS.ai };
+        aiSettings.maxTokens = maxTokens;
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
     }
 }

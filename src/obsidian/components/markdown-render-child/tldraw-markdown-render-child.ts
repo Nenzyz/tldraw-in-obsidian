@@ -27,7 +27,7 @@ type DocumentStoreInstance = ReturnType<TLDataDocumentStoreManager['register']>;
 
 type EmbedPageOptions = Pick<ImageViewModeOptions, 'bounds'>;
 
-type Timeout = number;
+type Timeout = ReturnType<typeof setTimeout>;
 
 export class TldrawMarkdownRenderChild extends MarkdownRenderChild {
     #workspaceLeafDeferrables = new Set<() => void>();

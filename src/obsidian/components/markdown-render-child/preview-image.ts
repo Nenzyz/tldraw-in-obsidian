@@ -4,7 +4,7 @@ import TLDataDocumentStoreManager from "../../plugin/TLDataDocumentStoreManager"
 import { TldrawAppStoreProps } from "src/components/TldrawApp";
 import { Store } from "tldraw";
 
-type Timeout = number;
+type Timeout = ReturnType<typeof setTimeout>;
 
 type Callback = () => void;
 

@@ -7,6 +7,7 @@ import TldrawEditorOptions from "./TldrawEditorOptions";
 import EmbedsSettings from "./EmbedsSettings";
 import AssetsSettings from "./AssetsSettings";
 import WorkspaceSettings from "./WorkspaceSettings";
+import AISettings from "./AISettings";
 
 const TABS = {
     'file': {
@@ -32,6 +33,10 @@ const TABS = {
     'assets': {
         label: 'Assets',
         Component: AssetsSettings,
+    },
+    'ai': {
+        label: 'AI',
+        Component: AISettings,
     }
 } satisfies Record<string, {
     label: string,

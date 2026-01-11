@@ -86,6 +86,32 @@ export type UserTLCameraOptions = Pick<Partial<TLCameraOptions>, 'panSpeed' | 'z
  */
 type MarkdownViewType = ViewType
 
+/**
+ * Model information fetched from Anthropic API
+ */
+export type AIModelInfo = {
+	id: string;
+	displayName: string;
+};
+
+/**
+ * AI assistant settings
+ */
+export type AISettings = {
+	/** Whether AI features are enabled */
+	enabled: boolean;
+	/** Anthropic API key */
+	apiKey: string;
+	/** Selected AI model ID (e.g., 'claude-sonnet-4-20250514') */
+	model: string;
+	/** Available models fetched from API */
+	availableModels: AIModelInfo[];
+	/** Whether to show the chat panel by default */
+	showChatPanel: boolean;
+	/** Maximum tokens for AI responses */
+	maxTokens: number;
+};
+
 export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings {
 	fileDestinations: FileDestinationsSettings;
 	saveFileDelay: number; // in seconds
@@ -207,6 +233,10 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 		 */
 		forceCompactMode?: boolean;
 	}
+	/**
+	 * AI assistant settings
+	 */
+	ai?: AISettings;
 }
 
 export const DEFAULT_SETTINGS = {
@@ -247,6 +277,14 @@ export const DEFAULT_SETTINGS = {
 	},
 	ui: {
 		forceCompactMode: false,
+	},
+	ai: {
+		enabled: false,
+		apiKey: '',
+		model: '',
+		availableModels: [],
+		showChatPanel: false,
+		maxTokens: 4096,
 	},
 } as const satisfies Partial<TldrawPluginSettings>;
 

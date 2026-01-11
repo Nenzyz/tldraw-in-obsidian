@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useEditor, useValue } from 'tldraw';
 import { ShapeList } from './ShapeList';
 
 export interface LayerPanelProps {
 	/** Whether the panel starts in a collapsed state */
 	defaultCollapsed?: boolean;
+	/** Callback when panel open state changes */
+	onOpenChange?: (isOpen: boolean) => void;
+	/** Whether to force the panel open (controlled mode) */
+	isOpen?: boolean;
 }
 
 // Layers icon SVG
@@ -26,9 +30,24 @@ const LayersIcon = () => (
 	</svg>
 );
 
-export function LayerPanel({ defaultCollapsed = false }: LayerPanelProps) {
+export function LayerPanel({
+	defaultCollapsed = false,
+	onOpenChange,
+	isOpen: controlledIsOpen,
+}: LayerPanelProps) {
 	const editor = useEditor();
-	const [isPanelOpen, setIsPanelOpen] = useState(!defaultCollapsed);
+	const [internalIsOpen, setInternalIsOpen] = useState(!defaultCollapsed);
+
+	// Use controlled or uncontrolled mode
+	const isPanelOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+	const handleTogglePanel = useCallback(() => {
+		const newState = !isPanelOpen;
+		if (controlledIsOpen === undefined) {
+			setInternalIsOpen(newState);
+		}
+		onOpenChange?.(newState);
+	}, [isPanelOpen, controlledIsOpen, onOpenChange]);
 
 	const shapeIds = useValue(
 		'shapeIds',
@@ -40,7 +59,7 @@ export function LayerPanel({ defaultCollapsed = false }: LayerPanelProps) {
 		<div className="ptl-layer-panel-wrapper">
 			<button
 				className="ptl-layer-panel-toggle-btn"
-				onClick={() => setIsPanelOpen(!isPanelOpen)}
+				onClick={handleTogglePanel}
 				aria-label={isPanelOpen ? 'Hide layer panel' : 'Show layer panel'}
 				title={isPanelOpen ? 'Hide layers' : 'Show layers'}
 			>
