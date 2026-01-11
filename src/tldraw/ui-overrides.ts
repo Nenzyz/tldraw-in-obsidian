@@ -1,8 +1,13 @@
-import { Editor, TLExportType, TLImageExportOptions, TLUiActionItem, TLUiActionsContextType, TLUiEventContextType, TLUiEventSource, TLUiOverrideHelpers, TLUiOverrides, useUiEvents } from "tldraw";
-import { Platform } from "obsidian";
+import { AssetRecordType, createShapeId, Editor, TLExportType, TLImageExportOptions, TLImageShape, TLShapeId, TLUiActionItem, TLUiActionsContextType, TLUiEventContextType, TLUiEventSource, TLUiOverrideHelpers, TLUiOverrides, useUiEvents } from "tldraw";
+import { Platform, TFile } from "obsidian";
 import TldrawPlugin from "src/main";
 import { downloadBlob, getSaveFileCopyAction, getSaveFileCopyInVaultAction, importFileAction, OPEN_FILE_ACTION, SAVE_FILE_COPY_ACTION, SAVE_FILE_COPY_IN_VAULT_ACTION } from "src/utils/file";
 import LassoSelectTool from "./tools/lasso-select-tool";
+import { FileSearchModal } from "src/obsidian/modal/FileSearchModal";
+import { PdfImportModal, PdfImportCanceled } from "src/obsidian/modal/PdfImportModal";
+import { loadPdfMetadata, renderPdfPage } from "src/components/pdf";
+
+export const IMPORT_PDF_ACTION = 'import-pdf';
 
 const DEFAULT_CAMERA_STEPS = [0.1, 0.25, 0.5, 1, 2, 4, 8];
 
@@ -70,6 +75,30 @@ export function uiOverrides(plugin: TldrawPlugin): TLUiOverrides {
 				},
 			}
 
+			// PDF Import action
+			actions[IMPORT_PDF_ACTION] = {
+				id: IMPORT_PDF_ACTION,
+				label: {
+					default: 'Import PDF...'
+				},
+				icon: 'file',
+				async onSelect() {
+					try {
+						await importPdfToEditor(editor, plugin);
+					} catch (error) {
+						if (error instanceof PdfImportCanceled) {
+							return; // User canceled, not an error
+						}
+						console.error('PDF import failed:', error);
+						addToast({
+							title: 'PDF Import Failed',
+							description: String(error),
+							severity: 'error',
+						});
+					}
+				},
+			}
+
 			return actions;
 		},
 	}
@@ -102,6 +131,95 @@ function exportAllAsOverride(editor: Editor, actions: TLUiActionsContextType, pl
 				res.showResultModal()
 			}
 		}
+	}
+}
+
+/**
+ * Import a PDF file into the tldraw editor
+ */
+async function importPdfToEditor(editor: Editor, plugin: TldrawPlugin): Promise<void> {
+	// Open file picker for PDF files
+	const file = await new Promise<TFile>((resolve, reject) => {
+		new FileSearchModal(plugin, {
+			extensions: ['pdf'],
+			onEmptyStateText: (searchPath) => `No PDF files found in ${searchPath}`,
+			setSelection: (selection) => {
+				if (selection instanceof TFile) {
+					resolve(selection);
+				} else {
+					reject(new Error('Please select a PDF file'));
+				}
+			},
+			onClose: () => {
+				reject(new PdfImportCanceled());
+			}
+		}).open();
+	});
+
+	// Show import options modal
+	const options = await PdfImportModal.show(plugin.app, file);
+
+	// Get page metadata for dimensions
+	const pageInfos = await loadPdfMetadata(plugin.app, file.path);
+
+	// Calculate viewport center for placement
+	const viewportBounds = editor.getViewportPageBounds();
+	const startX = viewportBounds.x + viewportBounds.w / 2;
+	let currentY = viewportBounds.y + 50;
+
+	const shapeIds: TLShapeId[] = [];
+
+	// Render and create shapes for each selected page
+	for (const pageNum of options.selectedPages) {
+		const pageInfo = pageInfos.find(p => p.pageNumber === pageNum);
+		if (!pageInfo) continue;
+
+		// Render the page to a blob
+		const blob = await renderPdfPage(plugin.app, file.path, pageNum, options.dpi);
+
+		// Calculate dimensions based on DPI
+		const scale = options.dpi / 72;
+		const width = pageInfo.width * scale;
+		const height = pageInfo.height * scale;
+
+		// Create asset from blob
+		const assetFile = new File([blob], `${file.basename}-page-${pageNum}.png`, { type: 'image/png' });
+		const asset = await editor.getAssetForExternalContent({ type: 'file', file: assetFile });
+
+		if (!asset) {
+			console.warn(`Failed to create asset for page ${pageNum}`);
+			continue;
+		}
+
+		editor.createAssets([asset]);
+
+		// Create image shape
+		const shapeId = createShapeId();
+		editor.createShape<TLImageShape>({
+			id: shapeId,
+			type: 'image',
+			x: startX - width / 2,
+			y: currentY,
+			props: {
+				assetId: asset.id,
+				w: width,
+				h: height,
+			},
+		});
+
+		shapeIds.push(shapeId);
+		currentY += height + options.spacing;
+	}
+
+	// Group pages if requested
+	if (options.groupPages && shapeIds.length > 1) {
+		editor.groupShapes(shapeIds);
+	}
+
+	// Select all created shapes
+	if (shapeIds.length > 0) {
+		editor.select(...shapeIds);
+		editor.zoomToSelection();
 	}
 }
 

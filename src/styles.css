@@ -636,3 +636,98 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 .tldraw-view-root .ptl-layer-panel-toggle-btn:hover {
 	background: var(--tl-color-muted-2);
 }
+
+/* ============================================
+   PDF Import Modal Styles
+   ============================================ */
+
+.ptl-pdf-import-modal {
+	padding: 20px;
+}
+
+.ptl-pdf-import-modal h2 {
+	margin-top: 0;
+	margin-bottom: 16px;
+}
+
+.ptl-pdf-info {
+	color: var(--text-muted);
+	margin-bottom: 16px;
+}
+
+.ptl-pdf-section {
+	margin-bottom: 20px;
+}
+
+.ptl-pdf-section h3 {
+	margin-top: 0;
+	margin-bottom: 12px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.ptl-pdf-bulk-buttons {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.ptl-pdf-bulk-buttons button {
+	padding: 4px 12px;
+	font-size: 12px;
+}
+
+.ptl-pdf-range {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.ptl-pdf-range-input {
+	flex: 1;
+	padding: 4px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-primary);
+}
+
+.ptl-pdf-page-list {
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+}
+
+.ptl-pdf-page-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+.ptl-pdf-page-item input[type="checkbox"] {
+	margin: 0;
+}
+
+.ptl-pdf-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 20px;
+	padding-top: 16px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ptl-pdf-error {
+	color: var(--text-error);
+	margin-top: 8px;
+}
+
+/* Ensure tldraw menus appear above layer panel */
+.tlui-menu,
+.tlui-popover,
+[data-radix-popper-content-wrapper] {
+	z-index: 800 !important;
+}

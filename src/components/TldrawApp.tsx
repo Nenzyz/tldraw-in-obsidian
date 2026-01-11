@@ -20,7 +20,7 @@ import {
 	useActions,
 } from "tldraw";
 import { OPEN_FILE_ACTION, SAVE_FILE_COPY_ACTION, SAVE_FILE_COPY_IN_VAULT_ACTION } from "src/utils/file";
-import { PLUGIN_ACTION_TOGGLE_ZOOM_LOCK, uiOverrides } from "src/tldraw/ui-overrides";
+import { IMPORT_PDF_ACTION, PLUGIN_ACTION_TOGGLE_ZOOM_LOCK, uiOverrides } from "src/tldraw/ui-overrides";
 import TldrawPlugin from "src/main";
 import { Platform } from "obsidian";
 import { useTldrawAppEffects } from "src/hooks/useTldrawAppHook";
@@ -122,6 +122,7 @@ function LocalFileMenu(props: { plugin: TldrawPlugin }) {
 			}
 			<TldrawUiMenuItem {...actions[SAVE_FILE_COPY_IN_VAULT_ACTION]} />
 			<TldrawUiMenuItem {...actions[OPEN_FILE_ACTION]} />
+			<TldrawUiMenuItem {...actions[IMPORT_PDF_ACTION]} />
 		</TldrawUiMenuSubmenu>
 	);
 }
