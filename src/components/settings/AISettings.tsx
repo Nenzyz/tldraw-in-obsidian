@@ -1,9 +1,49 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Setting from "./Setting";
 import useSettingsManager from "src/hooks/useSettingsManager";
 import useUserPluginSettings from "src/hooks/useUserPluginSettings";
-import { DEFAULT_SETTINGS } from "src/obsidian/TldrawSettingsTab";
-import { testAnthropicConnection } from "src/ai/anthropic-client";
+import { DEFAULT_SETTINGS, AIModelInfo } from "src/obsidian/TldrawSettingsTab";
+import { getProvider } from "src/ai/providers";
+import type { AgentModelProvider } from "src/ai/models";
+
+/**
+ * Provider display information for the UI
+ */
+const PROVIDER_INFO: Record<AgentModelProvider, {
+    displayName: string;
+    keyLabel: string;
+    keyPlaceholder: string;
+    helpUrl: string;
+    helpLinkText: string;
+}> = {
+    anthropic: {
+        displayName: 'Anthropic (Claude)',
+        keyLabel: 'Anthropic API key',
+        keyPlaceholder: 'sk-ant-...',
+        helpUrl: 'https://console.anthropic.com/settings/keys',
+        helpLinkText: 'console.anthropic.com',
+    },
+    google: {
+        displayName: 'Google (Gemini)',
+        keyLabel: 'Google API key',
+        keyPlaceholder: 'AIza...',
+        helpUrl: 'https://aistudio.google.com/apikey',
+        helpLinkText: 'aistudio.google.com',
+    },
+    openai: {
+        displayName: 'OpenAI (GPT)',
+        keyLabel: 'OpenAI API key',
+        keyPlaceholder: 'sk-...',
+        helpUrl: 'https://platform.openai.com/api-keys',
+        helpLinkText: 'platform.openai.com',
+    },
+};
+
+/**
+ * Provider display order for dropdowns and grouping
+ * Note: 'google' (Gemini) is intentionally hidden from UI but code remains intact
+ */
+const PROVIDER_ORDER: AgentModelProvider[] = ['anthropic', 'openai'];
 
 function AIEnabledSetting() {
     const settingsManager = useSettingsManager();
@@ -38,28 +78,87 @@ function AIEnabledSetting() {
     );
 }
 
+/**
+ * Task 7.2: Provider selection dropdown component
+ */
+function ProviderSelectionSetting() {
+    const settingsManager = useSettingsManager();
+    const settings = useUserPluginSettings(settingsManager);
+
+    const onProviderChange = useCallback(async (value: string) => {
+        await settingsManager.updateAIActiveProvider(value as AgentModelProvider);
+    }, [settingsManager]);
+
+    const activeProvider = settings.ai?.activeProvider ?? 'anthropic';
+    const aiEnabled = settings.ai?.enabled ?? false;
+    const providers = settings.ai?.providers ?? DEFAULT_SETTINGS.ai.providers;
+
+    // Build dropdown options with status indicators
+    const providerOptions = useMemo(() => {
+        const options: Record<string, string> = {};
+        for (const provider of PROVIDER_ORDER) {
+            const info = PROVIDER_INFO[provider];
+            const hasKey = !!providers[provider]?.apiKey;
+            // Add checkmark indicator for configured providers
+            const indicator = hasKey ? ' \u2713' : '';
+            options[provider] = `${info.displayName}${indicator}`;
+        }
+        return options;
+    }, [providers]);
+
+    return (
+        <Setting
+            slots={{
+                name: 'AI provider',
+                desc: (
+                    <>
+                        Select which AI provider to use. Providers marked with \u2713 have API keys configured.
+                    </>
+                ),
+                control: (
+                    <Setting.Dropdown
+                        value={activeProvider}
+                        options={providerOptions}
+                        onChange={onProviderChange}
+                        disabled={!aiEnabled}
+                    />
+                )
+            }}
+            disabled={!aiEnabled}
+        />
+    );
+}
+
+/**
+ * Task 7.3: API key input component for active provider
+ */
 function APIKeySetting() {
     const settingsManager = useSettingsManager();
     const settings = useUserPluginSettings(settingsManager);
     const [showKey, setShowKey] = useState(false);
 
-    const onApiKeyChange = useCallback(async (value: string) => {
-        await settingsManager.updateAIApiKey(value);
-    }, [settingsManager]);
-
-    const apiKey = settings.ai?.apiKey ?? '';
+    const activeProvider = settings.ai?.activeProvider ?? 'anthropic';
     const aiEnabled = settings.ai?.enabled ?? false;
+    const apiKey = settings.ai?.providers?.[activeProvider]?.apiKey ?? '';
 
-    // Create a masked version of the key for display
-    const displayValue = showKey ? apiKey : (apiKey ? '****' + apiKey.slice(-4) : '');
+    const providerInfo = PROVIDER_INFO[activeProvider];
+
+    const onApiKeyChange = useCallback(async (value: string) => {
+        await settingsManager.updateAIProviderApiKey(activeProvider, value);
+    }, [settingsManager, activeProvider]);
 
     return (
         <Setting
             slots={{
-                name: 'Anthropic API key',
+                name: providerInfo.keyLabel,
                 desc: (
                     <>
-                        <p>Your Anthropic API key for AI features. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>.</p>
+                        <p>
+                            Your {PROVIDER_INFO[activeProvider].displayName} API key. Get one at{' '}
+                            <a href={providerInfo.helpUrl} target="_blank" rel="noopener noreferrer">
+                                {providerInfo.helpLinkText}
+                            </a>.
+                        </p>
                         <p style={{ color: 'var(--color-yellow)', marginTop: '0.5em' }}>
                             <strong>Security note:</strong> Your API key is stored locally in Obsidian's plugin data and is not synced. Never share your API key.
                         </p>
@@ -71,7 +170,7 @@ function APIKeySetting() {
                             type={showKey ? 'text' : 'password'}
                             className="ptl-ai-api-key-input"
                             value={apiKey}
-                            placeholder="sk-ant-..."
+                            placeholder={providerInfo.keyPlaceholder}
                             onChange={(e) => onApiKeyChange(e.target.value)}
                             style={{
                                 width: '200px',
@@ -91,41 +190,92 @@ function APIKeySetting() {
     );
 }
 
+/**
+ * Task 7.5: Model selection dropdown with provider grouping
+ */
 function ModelSelectionSetting() {
     const settingsManager = useSettingsManager();
     const settings = useUserPluginSettings(settingsManager);
 
     const onModelChange = useCallback(async (value: string) => {
+        // Ignore divider selections
+        if (value.startsWith('__divider_')) {
+            return;
+        }
         await settingsManager.updateAIModel(value);
     }, [settingsManager]);
 
     const model = settings.ai?.model ?? '';
     const aiEnabled = settings.ai?.enabled ?? false;
-    const availableModels = settings.ai?.availableModels ?? [];
+    const providers = settings.ai?.providers ?? DEFAULT_SETTINGS.ai.providers;
 
-    // Build options from fetched models
-    const modelOptions: Record<string, string> = {};
-    for (const m of availableModels) {
-        modelOptions[m.id] = m.displayName;
-    }
+    // Build options grouped by provider
+    const { modelOptions, hasModels, configuredProviders, unconfiguredProviders } = useMemo(() => {
+        const options: Record<string, string> = {};
+        let totalModels = 0;
+        const configured: AgentModelProvider[] = [];
+        const unconfigured: AgentModelProvider[] = [];
 
-    const hasModels = availableModels.length > 0;
+        for (const provider of PROVIDER_ORDER) {
+            const providerSettings = providers[provider];
+            const hasKey = !!providerSettings?.apiKey;
+            const providerModels = providerSettings?.availableModels ?? [];
+
+            if (hasKey && providerModels.length > 0) {
+                // Add provider divider
+                const info = PROVIDER_INFO[provider];
+                options[`__divider_${provider}`] = `--- ${info.displayName} ---`;
+
+                // Add models for this provider
+                for (const m of providerModels) {
+                    options[m.id] = m.displayName;
+                    totalModels++;
+                }
+                configured.push(provider);
+            } else if (!hasKey) {
+                unconfigured.push(provider);
+            }
+        }
+
+        return {
+            modelOptions: options,
+            hasModels: totalModels > 0,
+            configuredProviders: configured,
+            unconfiguredProviders: unconfigured,
+        };
+    }, [providers]);
+
+    // Build description based on state
+    const description = useMemo(() => {
+        if (hasModels) {
+            const hints: string[] = [];
+            if (unconfiguredProviders.length > 0) {
+                const names = unconfiguredProviders.map(p => PROVIDER_INFO[p].displayName).join(', ');
+                hints.push(`Configure API keys to see models from: ${names}`);
+            }
+            return (
+                <>
+                    Select the AI model to use.
+                    {hints.length > 0 && (
+                        <span style={{ display: 'block', color: 'var(--text-muted)', marginTop: '0.3em', fontSize: '0.9em' }}>
+                            {hints[0]}
+                        </span>
+                    )}
+                </>
+            );
+        }
+        return (
+            <span style={{ color: 'var(--text-muted)' }}>
+                Click "Test Connection" to load available models for the active provider.
+            </span>
+        );
+    }, [hasModels, unconfiguredProviders]);
 
     return (
         <Setting
             slots={{
                 name: 'AI model',
-                desc: (
-                    <>
-                        {hasModels ? (
-                            'Select the Claude model to use for AI assistance.'
-                        ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>
-                                Click "Test Connection" below to load available models.
-                            </span>
-                        )}
-                    </>
-                ),
+                desc: description,
                 control: hasModels ? (
                     <Setting.Dropdown
                         value={model}
@@ -144,6 +294,9 @@ function ModelSelectionSetting() {
     );
 }
 
+/**
+ * Task 7.4: Test connection button for active provider
+ */
 function TestConnectionButton() {
     const settingsManager = useSettingsManager();
     const settings = useUserPluginSettings(settingsManager);
@@ -151,14 +304,17 @@ function TestConnectionButton() {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [modelsLoaded, setModelsLoaded] = useState<number>(0);
 
-    const apiKey = settings.ai?.apiKey ?? '';
+    const activeProvider = settings.ai?.activeProvider ?? 'anthropic';
     const aiEnabled = settings.ai?.enabled ?? false;
     const currentModel = settings.ai?.model ?? '';
+    const apiKey = settings.ai?.providers?.[activeProvider]?.apiKey ?? '';
+
+    const providerInfo = PROVIDER_INFO[activeProvider];
 
     const handleTestConnection = useCallback(async () => {
         if (!apiKey) {
             setTestStatus('error');
-            setErrorMessage('Please enter an API key first.');
+            setErrorMessage(`Please enter a ${providerInfo.displayName} API key first.`);
             return;
         }
 
@@ -167,13 +323,21 @@ function TestConnectionButton() {
         setModelsLoaded(0);
 
         try {
-            const result = await testAnthropicConnection(apiKey);
+            const provider = await getProvider(activeProvider);
+            const result = await provider.testConnection(apiKey);
+
             if (result.success && result.models) {
-                // Save the fetched models
-                await settingsManager.updateAIAvailableModels(result.models);
+                // Convert to AIModelInfo format
+                const modelInfos: AIModelInfo[] = result.models.map(m => ({
+                    id: m.id,
+                    displayName: m.displayName,
+                }));
+
+                // Save the fetched models to the active provider
+                await settingsManager.updateAIProviderAvailableModels(activeProvider, modelInfos);
                 setModelsLoaded(result.models.length);
 
-                // Auto-select first model if none selected
+                // Auto-select first model from this provider if none selected
                 if (!currentModel && result.models.length > 0) {
                     await settingsManager.updateAIModel(result.models[0].id);
                 }
@@ -185,7 +349,8 @@ function TestConnectionButton() {
             }
         } catch (err) {
             setTestStatus('error');
-            setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            setErrorMessage(`${providerInfo.displayName}: ${message}`);
         }
 
         // Reset status after 5 seconds
@@ -194,12 +359,12 @@ function TestConnectionButton() {
             setErrorMessage('');
             setModelsLoaded(0);
         }, 5000);
-    }, [apiKey, currentModel, settingsManager]);
+    }, [apiKey, activeProvider, currentModel, settingsManager, providerInfo]);
 
     const getStatusText = () => {
         switch (testStatus) {
-            case 'testing': return 'Testing...';
-            case 'success': return `Connected! ${modelsLoaded} models loaded.`;
+            case 'testing': return `Testing ${providerInfo.displayName}...`;
+            case 'success': return `${providerInfo.displayName} connected! ${modelsLoaded} models loaded.`;
             case 'error': return errorMessage || 'Connection failed';
             default: return '';
         }
@@ -219,7 +384,7 @@ function TestConnectionButton() {
                 name: 'Test connection',
                 desc: (
                     <>
-                        Verify your API key works correctly.
+                        Verify your {providerInfo.displayName} API key and fetch available models.
                         {testStatus !== 'idle' && (
                             <span style={{
                                 marginLeft: '1em',
@@ -240,6 +405,93 @@ function TestConnectionButton() {
                 )
             }}
             disabled={!aiEnabled || !apiKey || testStatus === 'testing'}
+        />
+    );
+}
+
+/**
+ * Task 7.6: Provider status indicators
+ */
+function ProviderStatusSetting() {
+    const settingsManager = useSettingsManager();
+    const settings = useUserPluginSettings(settingsManager);
+
+    const aiEnabled = settings.ai?.enabled ?? false;
+    const providers = settings.ai?.providers ?? DEFAULT_SETTINGS.ai.providers;
+
+    const statusItems = useMemo(() => {
+        return PROVIDER_ORDER.map(provider => {
+            const providerSettings = providers[provider];
+            const hasKey = !!providerSettings?.apiKey;
+            const hasModels = (providerSettings?.availableModels?.length ?? 0) > 0;
+            const info = PROVIDER_INFO[provider];
+
+            let status: 'configured' | 'warning' | 'none';
+            let statusIcon: string;
+            let statusColor: string;
+            let statusTooltip: string;
+
+            if (hasKey && hasModels) {
+                status = 'configured';
+                statusIcon = '\u2713'; // checkmark
+                statusColor = 'var(--color-green)';
+                statusTooltip = 'API key configured and tested';
+            } else if (hasKey && !hasModels) {
+                status = 'warning';
+                statusIcon = '\u26A0'; // warning triangle
+                statusColor = 'var(--color-yellow)';
+                statusTooltip = 'API key set but not tested';
+            } else {
+                status = 'none';
+                statusIcon = '\u2014'; // em dash
+                statusColor = 'var(--text-muted)';
+                statusTooltip = 'No API key configured';
+            }
+
+            return {
+                provider,
+                displayName: info.displayName,
+                status,
+                statusIcon,
+                statusColor,
+                statusTooltip,
+            };
+        });
+    }, [providers]);
+
+    return (
+        <Setting
+            slots={{
+                name: 'Provider status',
+                desc: (
+                    <div style={{ marginTop: '0.5em' }}>
+                        {statusItems.map(item => (
+                            <div
+                                key={item.provider}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5em',
+                                    marginBottom: '0.3em',
+                                }}
+                                title={item.statusTooltip}
+                            >
+                                <span style={{
+                                    color: item.statusColor,
+                                    fontWeight: 'bold',
+                                    width: '1.5em',
+                                    textAlign: 'center',
+                                }}>
+                                    {item.statusIcon}
+                                </span>
+                                <span>{item.displayName}</span>
+                            </div>
+                        ))}
+                    </div>
+                ),
+                control: null
+            }}
+            disabled={!aiEnabled}
         />
     );
 }
@@ -294,14 +546,50 @@ export default function AISettings() {
             </Setting.Container>
             <h2>API Configuration</h2>
             <Setting.Container>
+                <ProviderSelectionSetting />
                 <APIKeySetting />
-                <ModelSelectionSetting />
                 <TestConnectionButton />
+                <ProviderStatusSetting />
             </Setting.Container>
             <h2>Advanced</h2>
             <Setting.Container>
                 <MaxTokensSetting />
             </Setting.Container>
+            <h2>Custom Prompt Configuration</h2>
+            <div style={{ marginBottom: '1em', color: 'var(--text-muted)', fontSize: '0.9em' }}>
+                <p style={{ marginBottom: '0.5em' }}>
+                    You can customize the AI system prompt and JSON schema by editing the plugin's <code>data.json</code> file directly.
+                    This allows advanced customization of AI behavior without modifying source code.
+                </p>
+                <p style={{ marginBottom: '0.5em' }}>
+                    <strong>Available settings in <code>data.json</code> → <code>ai</code>:</strong>
+                </p>
+                <ul style={{ marginLeft: '1.5em', marginBottom: '0.5em' }}>
+                    <li><code>customSystemPrompt</code> - Custom system prompt text (optional)</li>
+                    <li><code>customJsonSchema</code> - Custom JSON schema as a string (optional)</li>
+                </ul>
+                <p style={{ marginBottom: '0.5em' }}>
+                    <strong>Placeholder substitution:</strong> If your <code>customSystemPrompt</code> contains the placeholder{' '}
+                    <code>{'{{JSON_SCHEMA}}'}</code>, it will be automatically replaced with the prettified content of{' '}
+                    <code>customJsonSchema</code> at runtime.
+                </p>
+                <p style={{ color: 'var(--text-faint)' }}>
+                    Note: Model selection is available in the AI agent window on the canvas, not in these settings.
+                </p>
+            </div>
         </>
     );
 }
+
+// Export individual components for testing and reuse
+export {
+    AIEnabledSetting,
+    ProviderSelectionSetting,
+    APIKeySetting,
+    ModelSelectionSetting,
+    TestConnectionButton,
+    ProviderStatusSetting,
+    MaxTokensSetting,
+    PROVIDER_INFO,
+    PROVIDER_ORDER,
+};

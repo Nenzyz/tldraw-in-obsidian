@@ -676,7 +676,7 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 }
 
 .ptl-chat-panel {
-	width: 320px;
+	width: 350px;
 	flex: 1;
 	min-height: 0;
 	background: var(--tl-color-panel);
@@ -685,6 +685,9 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 	border-radius: var(--tl-radius-3);
 	box-shadow: var(--tl-shadow-2);
 	overflow: hidden;
+	font-family: 'Inter', sans-serif;
+	font-size: 12px;
+	line-height: 1.5;
 }
 
 .ptl-chat-panel-header {
@@ -852,27 +855,77 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 	}
 }
 
+/* Action Notification (for agent actions like create, delete, etc.) */
+.ptl-chat-action-notification {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: var(--tl-color-muted-0);
+	border-radius: var(--tl-radius-2);
+	font-size: 11px;
+	color: var(--tl-color-text-2);
+	align-self: center;
+}
+
+.ptl-chat-action-type {
+	text-transform: capitalize;
+	font-weight: 500;
+}
+
+/* Generating Indicator (shown while agent is processing) */
+.ptl-chat-generating {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 8px;
+	align-self: flex-start;
+}
+
+.ptl-chat-generating-dot {
+	font-size: 8px;
+	color: var(--tl-color-text-2);
+	animation: ptl-chat-pulse 1.4s infinite ease-in-out both;
+}
+
+.ptl-chat-generating-dot:nth-child(1) {
+	animation-delay: -0.32s;
+}
+
+.ptl-chat-generating-dot:nth-child(2) {
+	animation-delay: -0.16s;
+}
+
 /* Input Area */
 .ptl-chat-panel-input-area {
+	display: flex;
+	flex-direction: column;
 	padding: 10px;
-	border-top: 1px solid var(--tl-color-divider);
 	background: var(--tl-color-panel);
 	flex-shrink: 0;
 }
 
 .ptl-chat-input-container {
 	display: flex;
-	align-items: flex-end;
+	flex-direction: column;
 	gap: 8px;
 	background: var(--tl-color-background);
 	border-radius: var(--tl-radius-3);
-	padding: 6px 8px;
+	padding: 8px;
 	border: 1px solid var(--tl-color-divider);
 	transition: border-color 0.15s ease;
 }
 
 .ptl-chat-input-container:focus-within {
 	border-color: var(--tl-color-selected);
+}
+
+/* Input row with textarea and submit button */
+.ptl-chat-input-row {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
 }
 
 .ptl-chat-input-textarea {
@@ -888,6 +941,22 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 	max-height: 120px;
 	padding: 2px 0;
 	font-family: inherit;
+	scrollbar-width: thin;
+	scrollbar-color: var(--tl-color-muted-1) transparent;
+}
+
+.ptl-chat-input-textarea::-webkit-scrollbar {
+	width: 8px;
+	background: transparent;
+}
+
+.ptl-chat-input-textarea::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.ptl-chat-input-textarea::-webkit-scrollbar-thumb {
+	background: var(--tl-color-muted-1);
+	border-radius: 4px;
 }
 
 .ptl-chat-input-textarea::placeholder {
@@ -948,6 +1017,127 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 	background: rgba(239, 68, 68, 0.15);
 }
 
+/* ============================================
+   Chat Actions (Model Selector, Context Selector)
+   ============================================ */
+
+.ptl-chat-actions {
+	display: flex;
+	gap: 8px;
+	width: 100%;
+	justify-content: space-between;
+	font-size: 11px;
+	color: var(--tl-color-text-2);
+}
+
+.ptl-chat-actions-left {
+	display: flex;
+	gap: 0px;
+}
+
+/* Model Selector */
+.ptl-chat-model-select {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0px 8px;
+	cursor: pointer;
+}
+
+.ptl-chat-model-select-label {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	margin-left: -6px;
+}
+
+.ptl-chat-model-select:hover {
+	color: var(--tl-color-text);
+}
+
+/* Hidden select overlay for native dropdown behavior */
+.ptl-chat-model-select select {
+	opacity: 0;
+	position: absolute;
+	left: -1px;
+	right: -1px;
+	top: 0;
+	bottom: 0;
+	width: calc(100% + 2px);
+	background-color: transparent;
+	border-radius: 6px;
+	padding: 2px 16px 2px 0px;
+	font-size: 11px;
+	border: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	cursor: pointer;
+}
+
+/* Context Selector (Add Context) */
+.ptl-chat-context-select {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0px 4px 0px 3px;
+	border: 1px solid var(--tl-color-text-2);
+	border-radius: 6px;
+	height: 18px;
+	cursor: pointer;
+	font-size: 10px;
+	font-weight: 500;
+}
+
+.ptl-chat-context-select-label {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+}
+
+.ptl-chat-context-select:hover {
+	color: var(--tl-color-text);
+	border-color: var(--tl-color-text);
+}
+
+/* Hidden select for context dropdown */
+.ptl-chat-context-select select {
+	opacity: 0;
+	position: absolute;
+	left: -1px;
+	right: -1px;
+	top: 0;
+	bottom: 0;
+	width: calc(100% + 2px);
+	background-color: transparent;
+	border-radius: 6px;
+	padding: 2px 16px 2px 0px;
+	font-size: 10px;
+	border: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	cursor: pointer;
+	font-weight: 500;
+	line-height: 1.5;
+}
+
+/* Active state when context tool is active */
+.ptl-chat-context-select.active {
+	background-color: var(--tl-color-primary);
+	color: black;
+	border-color: black;
+}
+
+.ptl-chat-context-select.active:hover {
+	background-color: var(--tl-color-primary);
+	color: var(--tl-color-text);
+	border-color: var(--tl-color-text);
+}
+
 /* Override Obsidian button styles for chat panel buttons */
 .tldraw-view-root .ptl-chat-panel button {
 	background-color: transparent;
@@ -965,6 +1155,367 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 
 .tldraw-view-root .ptl-chat-input-btn {
 	padding: 0;
+}
+
+/* Chat Panel Header Actions */
+.ptl-chat-panel-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.ptl-chat-panel-header-btn {
+	width: 24px;
+	height: 24px;
+	min-width: 24px;
+	min-height: 24px;
+	border-radius: var(--tl-radius-2);
+	background: transparent;
+	border: none;
+	outline: none;
+	cursor: pointer;
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	color: var(--tl-color-text-1);
+	transition: background-color 0.15s ease;
+	visibility: visible !important;
+	opacity: 1 !important;
+}
+
+.ptl-chat-panel-header-btn:hover {
+	background: var(--tl-color-muted-2);
+	color: var(--tl-color-text);
+}
+
+.ptl-chat-panel-header-btn svg {
+	width: 14px;
+	height: 14px;
+	display: block;
+	stroke: currentColor;
+	flex-shrink: 0;
+}
+
+/* Chat History - Main container */
+.ptl-chat-history {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 0px 16px 32px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	position: relative;
+	width: 100%;
+	scrollbar-width: thin;
+	scrollbar-color: var(--tl-color-muted-1) transparent;
+}
+
+.ptl-chat-history::-webkit-scrollbar {
+	width: 8px;
+}
+
+.ptl-chat-history::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.ptl-chat-history::-webkit-scrollbar-thumb {
+	background: var(--tl-color-muted-1);
+	border-radius: 4px;
+}
+
+/* Chat Fallback (empty state) */
+.ptl-chat-fallback {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--tl-color-text-2);
+	font-size: 13px;
+	text-align: center;
+	padding: 20px;
+}
+
+.ptl-chat-fallback p {
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* Chat History Section - Groups prompt with its actions */
+.ptl-chat-history-section {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	flex-shrink: 0;
+}
+
+.ptl-chat-history-section:last-child {
+	min-height: calc(100% - 1px);
+}
+
+/* Chat History Prompt - User's message with sticky positioning */
+.ptl-chat-history-prompt-container {
+	position: sticky;
+	top: -6px;
+	padding: 8px;
+	margin: -8px;
+	z-index: 9999;
+	background-color: var(--tl-color-panel);
+}
+
+.ptl-chat-history-prompt {
+	background-color: var(--tl-color-muted-1);
+	box-shadow: var(--tl-shadow-1);
+	color: var(--tl-color-text-1);
+	width: 100%;
+	font-family: 'Inter', sans-serif;
+	font-weight: 400;
+	font-size: 12px;
+	padding: 8px;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	white-space: pre-wrap;
+	max-height: 25vh;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--tl-color-text-3) transparent;
+}
+
+.ptl-chat-history-prompt::-webkit-scrollbar {
+	width: 8px;
+	background: transparent;
+}
+
+.ptl-chat-history-prompt::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.ptl-chat-history-prompt::-webkit-scrollbar-thumb {
+	background: var(--tl-color-text-3);
+	border-radius: 4px;
+}
+
+/* ============================================
+   Prompt Tags (selection, context)
+   ============================================ */
+
+.ptl-prompt-tags {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.ptl-prompt-tag {
+	display: flex;
+	align-items: center;
+	border-radius: 6px;
+	background-color: transparent;
+	font-size: 10px;
+	border: 1px solid var(--tl-color-text-2);
+	padding: 8px 4px 8px 3px;
+	font-weight: 500;
+	height: 16px;
+	color: var(--tl-color-text-2);
+	white-space: nowrap;
+	font-family: 'Inter', sans-serif;
+	max-width: 100%;
+}
+
+button.ptl-prompt-tag {
+	cursor: pointer;
+	background: transparent;
+	box-shadow: none;
+}
+
+button.ptl-prompt-tag:hover {
+	color: var(--tl-color-text);
+	border-color: var(--tl-color-text);
+}
+
+button.ptl-prompt-tag span {
+	user-select: none;
+}
+
+.ptl-prompt-tag span {
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.ptl-prompt-tag svg {
+	flex-shrink: 0;
+}
+
+/* Override Obsidian button styles for prompt tags */
+.tldraw-view-root button.ptl-prompt-tag {
+	background: transparent;
+	box-shadow: none;
+	padding: 8px 4px 8px 3px;
+}
+
+/* Chat History Group - Groups related actions */
+.ptl-chat-history-group {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* Collapse Button for thought groups - matches template styling */
+.ptl-chat-history-group button.ptl-chat-history-collapse-btn {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 12px 0px;
+	margin: -12px 0px;
+	font-size: 12px;
+	font-family: 'Inter', sans-serif;
+	font-weight: 400;
+	color: var(--tl-color-text-2);
+	background-color: transparent;
+	border: none;
+	cursor: pointer;
+}
+
+.ptl-chat-history-group button.ptl-chat-history-collapse-btn:hover {
+	color: var(--tl-color-text);
+}
+
+.ptl-chat-history-group button.ptl-chat-history-collapse-btn:disabled {
+	color: var(--tl-color-text-1);
+	cursor: default;
+}
+
+.ptl-chat-history-collapse-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+}
+
+/* Agent Actions Container */
+.ptl-agent-actions-container {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Individual Agent Action */
+.ptl-agent-action {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	font-size: 12px;
+	font-family: 'Inter', sans-serif;
+	font-weight: 400;
+	color: var(--tl-color-text-2);
+}
+
+.ptl-agent-action-icon {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 18px;
+	color: var(--tl-color-text-2);
+}
+
+.ptl-agent-action-description {
+	margin: 0;
+	width: 100%;
+}
+
+.ptl-agent-action-description > p:first-child {
+	margin-top: 0;
+}
+
+.ptl-agent-action-description > p:last-child {
+	margin-bottom: 0;
+}
+
+/* Markdown rendering in action descriptions */
+.ptl-agent-action-description p {
+	white-space: pre-wrap;
+}
+
+.ptl-agent-action-description ul,
+.ptl-agent-action-description ol {
+	padding-left: 20px;
+}
+
+.ptl-agent-action-description pre {
+	width: 100%;
+	overflow-x: scroll;
+}
+
+.ptl-agent-action-description blockquote {
+	padding-left: 14px;
+	border-left: 2px solid var(--tl-color-text-2);
+	margin: 0;
+}
+
+.ptl-agent-action-description li {
+	margin: 0.25em 0;
+}
+
+.ptl-agent-action-description strong {
+	font-weight: 600;
+}
+
+.ptl-agent-action-description code {
+	background: var(--background-modifier-hover);
+	padding: 0.1em 0.3em;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+.ptl-agent-action-description pre code {
+	background: none;
+	padding: 0;
+}
+
+/* Message action styling - make it stand out */
+.ptl-agent-action-type-message {
+	color: var(--tl-color-text-1);
+}
+
+/* Spinner */
+.ptl-chat-spinner {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 4px;
+	padding: 4px 0;
+}
+
+.ptl-chat-spinner-dot {
+	font-size: 8px;
+	color: var(--tl-color-text-2);
+	animation: ptl-chat-pulse 1.4s infinite ease-in-out both;
+}
+
+.ptl-chat-spinner-dot:nth-child(1) {
+	animation-delay: -0.32s;
+}
+
+.ptl-chat-spinner-dot:nth-child(2) {
+	animation-delay: -0.16s;
+}
+
+/* Override button styles within chat history */
+.tldraw-view-root .ptl-chat-history-collapse-btn {
+	background: transparent;
+	box-shadow: none;
+	padding: 12px 0;
+}
+
+.tldraw-view-root .ptl-chat-panel-header-btn {
+	background: transparent;
+	box-shadow: none;
 }
 
 /* ============================================
@@ -1060,4 +1611,408 @@ div[data-type="tldraw-read-only"] .view-content.tldraw-view-content {
 .tlui-popover,
 [data-radix-popper-content-wrapper] {
 	z-index: 800 !important;
+}
+
+/* ============================================
+   Accept/Reject Change Buttons - Template Style
+   ============================================ */
+
+.ptl-chat-history-change {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.ptl-chat-history-change-acceptance {
+	display: flex;
+	justify-content: flex-end;
+	width: 100%;
+	gap: 2px;
+}
+
+.ptl-chat-history-change-acceptance button {
+	border: 0;
+	cursor: pointer;
+	background-color: var(--tl-color-muted-1);
+	color: var(--tl-color-text-2);
+	padding: 4px 8px;
+	font-size: 10px;
+	font-weight: 500;
+	height: 20px;
+	user-select: none;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-direction: row;
+	border-radius: 0;
+}
+
+.ptl-chat-history-change-acceptance button:hover {
+	color: var(--tl-color-text);
+}
+
+.ptl-chat-history-change-acceptance button:disabled {
+	color: var(--tl-color-text-1);
+	cursor: default;
+}
+
+/* First button: top-left radius only */
+.ptl-chat-history-change-acceptance button:first-child {
+	border-radius: 4px 0px 0px 0px;
+}
+
+/* Last button: top-right radius only */
+.ptl-chat-history-change-acceptance button:last-child {
+	border-radius: 0px 4px 0px 0px;
+}
+
+/* ============================================
+   Agent Changes (Diff Steps) - Template Style
+   ============================================ */
+
+.ptl-agent-changes {
+	background-color: var(--tl-color-muted-1);
+	padding: 6px 8px;
+	margin: 0px 0px;
+	border-radius: 4px 0px 0px 0px;
+	color: var(--tl-color-text-2);
+	max-height: 70px;
+	overflow-y: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.ptl-agent-changes::-webkit-scrollbar {
+	display: none;
+}
+
+.ptl-agent-changes:last-child {
+	border-radius: 4px 0px 4px 4px;
+	max-height: 100%;
+}
+
+.ptl-agent-change {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	font-size: 12px;
+	font-family: 'Inter', sans-serif;
+	font-weight: 400;
+}
+
+.ptl-agent-change-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	opacity: 0.7;
+}
+
+/* ============================================
+   TldrawViewer (Shape Preview)
+   ============================================ */
+
+.ptl-tldraw-viewer {
+	height: 150px;
+	min-height: 150px;
+	position: relative;
+	border-radius: 8px;
+	overflow: hidden;
+	background: var(--tl-color-background);
+}
+
+.ptl-tldraw-viewer .tlui-tooltip {
+	display: none;
+}
+
+/* Diff summary (collapsed state) */
+.ptl-diff-summary {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	background: var(--color-bg-secondary);
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 12px;
+	width: 100%;
+	text-align: left;
+}
+
+.ptl-diff-summary:hover {
+	background: var(--color-bg-tertiary);
+}
+
+.ptl-diff-summary-stats {
+	font-family: var(--font-monospace);
+	font-weight: 600;
+	color: var(--color-accent);
+}
+
+.ptl-diff-summary-label {
+	color: var(--color-text-secondary);
+}
+
+/* Diff viewer expanded */
+.ptl-diff-viewer-expanded {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.ptl-diff-collapse-btn {
+	align-self: flex-start;
+	padding: 4px 8px;
+	font-size: 11px;
+	background: transparent;
+	border: none;
+	color: var(--color-text-secondary);
+	cursor: pointer;
+}
+
+.ptl-diff-collapse-btn:hover {
+	color: var(--color-text-primary);
+}
+
+/* ============================================
+   Diff Shape Styling - Template Style
+   ============================================ */
+
+/* Created shapes - green glow */
+.ptl-diff-shape-create-shadow {
+	filter: drop-shadow(
+			calc(var(--tl-scale) * 1px) calc(var(--tl-scale) * 1px) 0px rgba(0, 200, 0, 50%)
+		)
+		drop-shadow(calc(var(--tl-scale) * -1px) calc(var(--tl-scale) * -1px) 0px rgba(0, 200, 0, 50%))
+		drop-shadow(calc(var(--tl-scale) * 1px) calc(var(--tl-scale) * -1px) 0px rgba(0, 200, 0, 50%))
+		drop-shadow(calc(var(--tl-scale) * -1px) calc(var(--tl-scale) * 1px) 0px rgba(0, 200, 0, 50%));
+}
+
+/* Deleted shapes - red glow */
+.ptl-diff-shape-delete-shadow {
+	filter: drop-shadow(
+			calc(var(--tl-scale) * 1px) calc(var(--tl-scale) * 1px) 0px rgba(200, 0, 0, 50%)
+		)
+		drop-shadow(calc(var(--tl-scale) * -1px) calc(var(--tl-scale) * -1px) 0px rgba(200, 0, 0, 50%))
+		drop-shadow(calc(var(--tl-scale) * 1px) calc(var(--tl-scale) * -1px) 0px rgba(200, 0, 0, 50%))
+		drop-shadow(calc(var(--tl-scale) * -1px) calc(var(--tl-scale) * 1px) 0px rgba(200, 0, 0, 50%));
+}
+
+/* Updated shapes - blue glow */
+.ptl-diff-shape-update-after-shadow {
+	filter: drop-shadow(
+			calc(var(--tl-scale) * 1px) calc(var(--tl-scale) * 1px) 0px rgba(0, 100, 255, 50%)
+		)
+		drop-shadow(
+			calc(var(--tl-scale) * -1px) calc(var(--tl-scale) * -1px) 0px rgba(0, 100, 255, 50%)
+		)
+		drop-shadow(calc(var(--tl-scale) * 1px) calc(var(--tl-scale) * -1px) 0px rgba(0, 100, 255, 50%))
+		drop-shadow(calc(var(--tl-scale) * -1px) calc(var(--tl-scale) * 1px) 0px rgba(0, 100, 255, 50%));
+}
+
+/* ============================================
+   TodoList Styling - Template Style
+   ============================================ */
+
+.ptl-todo-list {
+	background-color: var(--tl-color-panel);
+	border-radius: 12px 12px 0 0;
+	padding: 8px 8px 4px 8px;
+	box-shadow: var(--tl-shadow-1);
+	border: 1px solid var(--tl-color-muted-2);
+	border-bottom: none;
+	max-height: 150px;
+	overflow-y: auto;
+	flex-shrink: 0;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	margin-bottom: -4px;
+}
+
+.ptl-todo-list::-webkit-scrollbar {
+	display: none;
+}
+
+.ptl-todo-list-items {
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+.ptl-todo-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding-left: 4px;
+	border-radius: 6px;
+	font-size: 12px;
+	line-height: 1.3;
+}
+
+.ptl-todo-item-icon {
+	font-size: 10px;
+	width: 12px;
+	text-align: center;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.ptl-todo-item-text {
+	flex: 1;
+	color: var(--tl-color-text-3);
+	user-select: none;
+	padding-bottom: 8px;
+}
+
+/* Status-specific icon colors */
+.ptl-todo-item-todo .ptl-todo-item-icon {
+	color: var(--tl-color-text-3);
+}
+
+.ptl-todo-item-in-progress .ptl-todo-item-icon {
+	color: var(--tl-color-primary);
+}
+
+.ptl-todo-item-in-progress .ptl-todo-item-text {
+	font-weight: 500;
+	color: var(--tl-color-text);
+}
+
+.ptl-todo-item-done .ptl-todo-item-icon {
+	color: rgb(76, 200, 94);
+}
+
+.ptl-todo-item-done .ptl-todo-item-text {
+	color: var(--tl-color-text-2);
+	text-decoration: line-through;
+}
+
+/* Delete button - hidden by default, visible on item hover */
+.ptl-todo-item-delete {
+	appearance: none;
+	background: none;
+	border: none;
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	display: flex;
+	padding: 12px;
+	padding-right: 14px;
+	margin-right: -3px;
+	margin-top: -3px;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	color: var(--tl-color-text-2);
+	opacity: 0;
+	transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+/* Show delete button on item hover */
+.ptl-todo-item:hover .ptl-todo-item-delete {
+	opacity: 1;
+}
+
+/* Delete button hover state - color change to text-1 */
+.ptl-todo-item-delete:hover {
+	color: var(--tl-color-text-1);
+}
+
+/* Override button styles within todo list */
+.tldraw-view-root .ptl-todo-item-delete {
+	background: transparent;
+	box-shadow: none;
+}
+
+/* Override button styles for Accept/Reject */
+.tldraw-view-root .ptl-chat-history-change-acceptance button {
+	background: var(--tl-color-muted-1);
+	box-shadow: none;
+}
+
+/* ============================================
+   Chat Icon Styles
+   ============================================ */
+
+.ptl-chat-icon {
+	width: 11px;
+	height: 11px;
+	margin-right: 4px;
+	flex-shrink: 0;
+	stroke: currentColor;
+}
+
+/* Spinner animation for loading indicator */
+.ptl-spinner {
+	animation: ptl-spinner-rotate 1s linear infinite;
+}
+
+@keyframes ptl-spinner-rotate {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ============================================
+   Context Highlights - Canvas Overlays
+   ============================================ */
+
+/* Base highlight styling - pointer-events none so highlights don't interfere with interactions */
+.ptl-context-highlight {
+	pointer-events: none;
+}
+
+/* Dashed line styling for area highlights */
+.ptl-context-highlight line {
+	stroke-dasharray: 4px;
+	stroke-linecap: round;
+	stroke-width: 1px;
+}
+
+/* Animated dash when generating/processing */
+.ptl-context-highlight-generating line {
+	animation: ptl-dash 100s linear infinite;
+}
+
+/* Circle styling for point highlights */
+.ptl-context-highlight circle {
+	stroke-width: 1px;
+	pointer-events: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Animated circle when generating */
+.ptl-context-highlight-generating circle {
+	stroke-dasharray: 3px;
+	stroke-width: 2px;
+	fill: none;
+	animation: ptl-dash 100s linear infinite;
+}
+
+/* Label styling for area highlights (e.g., "Reviewing") */
+.ptl-context-highlight-label {
+	position: absolute;
+	color: var(--tl-color-text-shadow);
+	padding: 4px;
+	font-size: 12px;
+	background-color: var(--tl-color-tooltip);
+	border-radius: 0px 0px 6px 0px;
+	font-weight: 500;
+	white-space: nowrap;
+	margin-top: -0.5px;
+	margin-left: -0.5px;
+	pointer-events: none;
+	font-family: 'Inter', sans-serif;
+}
+
+/* Dash animation keyframes - moves stroke-dashoffset for animated dashed lines */
+@keyframes ptl-dash {
+	to {
+		stroke-dashoffset: -2000px;
+	}
 }

@@ -1,7 +1,26 @@
+/**
+ * Anthropic client module - Backward compatibility layer.
+ *
+ * This module re-exports functionality from the new provider abstraction layer
+ * to maintain backward compatibility with existing code that imports from here.
+ *
+ * @deprecated Import from 'src/ai/providers' or 'src/ai/providers/anthropic' instead.
+ */
+
 import Anthropic from '@anthropic-ai/sdk';
+import {
+    createAnthropicClient as _createAnthropicClient,
+    parseAnthropicError as _parseAnthropicError,
+    testAnthropicConnection as _testAnthropicConnection,
+    streamAgentActions as _streamAgentActions,
+} from './providers/anthropic';
+import type { FetchedModel } from './providers/types';
+
+// Re-export types for backward compatibility
+// Map the new AIError type to the old AnthropicError type format
 
 /**
- * Error types for API failures
+ * @deprecated Use AIErrorType from 'src/ai/providers' instead.
  */
 export type AnthropicErrorType =
     | 'invalid_api_key'
@@ -10,6 +29,9 @@ export type AnthropicErrorType =
     | 'server_error'
     | 'unknown';
 
+/**
+ * @deprecated Use AIError from 'src/ai/providers' instead.
+ */
 export interface AnthropicError {
     type: AnthropicErrorType;
     message: string;
@@ -17,123 +39,66 @@ export interface AnthropicError {
 }
 
 /**
- * Create an Anthropic client with the given API key
- * Note: This uses dangerouslyAllowBrowser since we're running in Obsidian
+ * @deprecated Use FetchedModel from 'src/ai/providers' instead.
+ */
+export type { FetchedModel };
+
+/**
+ * Create an Anthropic client with the given API key.
+ *
+ * @deprecated Import from 'src/ai/providers/anthropic' instead.
+ *
+ * @param apiKey - The Anthropic API key
+ * @returns Configured Anthropic client instance
  */
 export function createAnthropicClient(apiKey: string): Anthropic {
-    return new Anthropic({
-        apiKey,
-        dangerouslyAllowBrowser: true,
-    });
+    return _createAnthropicClient(apiKey);
 }
 
 /**
- * Parse an error from the Anthropic API into a structured format
+ * Parse an error from the Anthropic API into a structured format.
+ *
+ * @deprecated Import from 'src/ai/providers/anthropic' instead.
+ *
+ * Note: This returns the old AnthropicError format for backward compatibility.
+ * The new parseAnthropicError returns AIError which includes 'provider' field.
+ *
+ * @param error - The error to parse
+ * @returns Structured error in the old format (without provider field)
  */
 export function parseAnthropicError(error: unknown): AnthropicError {
-    if (error instanceof Anthropic.APIError) {
-        if (error.status === 401) {
-            return {
-                type: 'invalid_api_key',
-                message: 'Invalid API key. Please check your API key in settings.',
-                retryable: false,
-            };
-        }
-        if (error.status === 429) {
-            return {
-                type: 'rate_limit',
-                message: 'Rate limit exceeded. Please wait and try again.',
-                retryable: true,
-            };
-        }
-        if (error.status >= 500) {
-            return {
-                type: 'server_error',
-                message: 'Anthropic server error. Please try again later.',
-                retryable: true,
-            };
-        }
-    }
-
-    if (error instanceof Error) {
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-            return {
-                type: 'network_error',
-                message: 'Network error. Please check your internet connection.',
-                retryable: true,
-            };
-        }
-    }
-
+    const aiError = _parseAnthropicError(error);
+    // Map context_exceeded to unknown for backward compatibility
+    // (the old type didn't have context_exceeded)
+    const type: AnthropicErrorType =
+        aiError.type === 'context_exceeded' ? 'unknown' : (aiError.type as AnthropicErrorType);
     return {
-        type: 'unknown',
-        message: error instanceof Error ? error.message : 'An unknown error occurred',
-        retryable: false,
+        type,
+        message: aiError.message,
+        retryable: aiError.retryable,
     };
 }
 
 /**
- * Fetched model information
- */
-export interface FetchedModel {
-    id: string;
-    displayName: string;
-}
-
-/**
- * Test the connection to the Anthropic API and fetch available models
+ * Test the connection to the Anthropic API and fetch available models.
+ *
+ * @deprecated Import testAnthropicConnection from 'src/ai/providers/anthropic' instead.
+ *
+ * @param apiKey - The API key to test
+ * @returns Connection result with success status and available models
  */
 export async function testAnthropicConnection(apiKey: string): Promise<{
     success: boolean;
     error?: string;
     models?: FetchedModel[];
 }> {
-    if (!apiKey || !apiKey.trim()) {
-        return { success: false, error: 'API key is required' };
-    }
-
-    try {
-        const client = createAnthropicClient(apiKey);
-
-        // Fetch available models
-        const modelsResponse = await client.models.list();
-
-        // Filter to only Claude models and format them
-        const models: FetchedModel[] = modelsResponse.data
-            .filter(model => model.id.startsWith('claude'))
-            .map(model => ({
-                id: model.id,
-                displayName: formatModelName(model.id),
-            }))
-            .sort((a, b) => a.displayName.localeCompare(b.displayName));
-
-        return { success: true, models };
-    } catch (error) {
-        const parsedError = parseAnthropicError(error);
-        return { success: false, error: parsedError.message };
-    }
+    return _testAnthropicConnection(apiKey);
 }
 
 /**
- * Format a model ID into a human-readable name
- */
-function formatModelName(modelId: string): string {
-    // Convert "claude-3-5-sonnet-20241022" to "Claude 3.5 Sonnet"
-    // Convert "claude-sonnet-4-20250514" to "Claude Sonnet 4"
-    return modelId
-        .replace(/-\d{8}$/, '') // Remove date suffix
-        .split('-')
-        .map(part => {
-            if (part === 'claude') return 'Claude';
-            if (/^\d+$/.test(part)) return part;
-            return part.charAt(0).toUpperCase() + part.slice(1);
-        })
-        .join(' ')
-        .replace(/(\d) (\d)/g, '$1.$2'); // "3 5" -> "3.5"
-}
-
-/**
- * Cancellation token for streaming operations
+ * Cancellation token for streaming operations.
+ *
+ * @deprecated Use AbortController/AbortSignal instead.
  */
 export class CancellationToken {
     private _cancelled = false;
@@ -166,7 +131,9 @@ export class CancellationToken {
 }
 
 /**
- * Stream response handler
+ * Stream response handler callbacks.
+ *
+ * @deprecated This interface is no longer used. Use the generator-based API instead.
  */
 export interface StreamCallbacks {
     onText?: (text: string) => void;
@@ -175,7 +142,13 @@ export interface StreamCallbacks {
 }
 
 /**
- * Send a streaming message to Claude
+ * Send a streaming message to Claude.
+ *
+ * @deprecated Use streamAgentActions for agent functionality,
+ * or use the Anthropic SDK directly for simple chat.
+ *
+ * This function is kept for backward compatibility but is not recommended
+ * for new code. Consider using the provider abstraction layer instead.
  */
 export async function streamMessage(
     apiKey: string,
@@ -210,10 +183,12 @@ export async function streamMessage(
         for await (const event of stream) {
             if (aborted) break;
 
-            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-                const text = event.delta.text;
-                fullText += text;
-                callbacks.onText?.(text);
+            if (event.type === 'content_block_delta') {
+                const delta = event.delta as { type?: string; text?: string };
+                if (delta?.type === 'text_delta' && delta.text) {
+                    fullText += delta.text;
+                    callbacks.onText?.(delta.text);
+                }
             }
         }
 
@@ -232,7 +207,45 @@ export async function streamMessage(
 }
 
 /**
- * Send a non-streaming message to Claude (for tool use)
+ * Stream agent actions from Claude.
+ *
+ * @deprecated Import from 'src/ai/providers/anthropic' instead.
+ *
+ * This function is re-exported for backward compatibility.
+ * The implementation now lives in the provider module.
+ *
+ * @param apiKey - The Anthropic API key
+ * @param modelId - The model ID to use
+ * @param messages - The conversation messages
+ * @param systemPrompt - The system prompt
+ * @param maxTokens - Maximum tokens to generate
+ * @param signal - Optional abort signal for cancellation
+ * @yields StreamAction objects as they are parsed from the response
+ */
+export async function* streamAgentActions(
+    apiKey: string,
+    modelId: string,
+    messages: Array<{ role: 'user' | 'assistant'; content: string | Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> }>,
+    systemPrompt: string,
+    maxTokens: number,
+    signal?: AbortSignal,
+): AsyncGenerator<{ _type: string; complete: boolean; time: number; [key: string]: unknown }> {
+    yield* _streamAgentActions({
+        apiKey,
+        modelId,
+        messages,
+        systemPrompt,
+        maxTokens,
+        signal,
+    });
+}
+
+/**
+ * Send a non-streaming message to Claude (for tool use).
+ *
+ * @deprecated Use the Anthropic SDK directly for non-streaming requests.
+ *
+ * This function is kept for backward compatibility.
  */
 export async function sendMessage(
     apiKey: string,

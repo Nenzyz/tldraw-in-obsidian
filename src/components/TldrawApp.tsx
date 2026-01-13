@@ -35,6 +35,8 @@ import { TldrawSettingsProvider } from "src/contexts/tldraw-settings-context";
 import { PTLEditorBlockBlur } from "src/utils/dom-attributes";
 import { CustomToolbar } from "./CustomToolbar";
 import LassoOverlays from "./LassoOverlays";
+import { TargetAreaTool } from "src/ai/tools/TargetAreaTool";
+import { TargetShapeTool } from "src/ai/tools/TargetShapeTool";
 
 type TldrawAppOptions = {
 	iconAssetUrls?: TLUiAssetUrlOverrides['icons'],
@@ -61,8 +63,8 @@ type TldrawAppOptions = {
 	 */
 	onInitialSnapshot?: (snapshot: StoreSnapshot<TLRecord>) => void,
 	/**
-	 * 
-	 * @param event 
+	 *
+	 * @param event
 	 * @returns `true` if the editor should be blurred.
 	 */
 	onClickAwayBlur?: (event: PointerEvent) => boolean,
@@ -133,6 +135,12 @@ function getEditorStoreProps(storeProps: TldrawAppStoreProps) {
 	}
 }
 
+// Default tools including AI context targeting tools
+const defaultTools: TLStateNodeConstructor[] = [
+	TargetAreaTool,
+	TargetShapeTool,
+];
+
 const TldrawApp = ({ plugin, store,
 	options: {
 		components: otherComponents,
@@ -168,6 +176,12 @@ const TldrawApp = ({ plugin, store,
 		...components(plugin),
 		...otherComponents
 	});
+
+	// Merge default tools with any custom tools provided
+	const allTools = React.useMemo(() => {
+		const customTools = tools ?? [];
+		return [...defaultTools, ...customTools];
+	}, [tools]);
 
 	const storeProps = React.useMemo(() => !store ? undefined : getEditorStoreProps(store), [store])
 
@@ -236,7 +250,7 @@ const TldrawApp = ({ plugin, store,
 
 	/**
 	 * "Flashbang" workaround
-	 * 
+	 *
 	 * The editor shows a loading screen which doesn't reflect the user's preference until the editor is loaded.
 	 * This works around it by checking the user's preference ahead of time and passing the dark theme className.
 	 */
@@ -292,7 +306,7 @@ const TldrawApp = ({ plugin, store,
 					// Set this flag to false when a tldraw document is embed into markdown to prevent it from gaining focus when it is loaded.
 					autoFocus={false}
 					onMount={setAppState}
-					tools={tools}
+					tools={allTools}
 					className={fbWorkAroundClassname}
 					getShapeVisibility={getShapeVisibility}
 					forceMobile={forceCompactMode}

@@ -1,13 +1,38 @@
-import React, { ReactNode, useState, useCallback } from "react"
+import React, { ReactNode, useState, useCallback, useMemo } from "react"
+import { useEditor } from "tldraw";
 import TextSuggestions from "./TextSuggestions";
 import LayerPanel from "./LayerPanel";
 import ChatPanel from "./ChatPanel";
+import { ContextHighlights } from "./ChatPanel/highlights";
 import { useSettings } from "src/contexts/tldraw-settings-context";
+import { useTldrawAgent } from "src/ai/agent/useTldrawAgent";
+import { AISettings } from "src/ai/agent/streamAgent";
 
 export default function InFrontOfTheCanvas({ children }: {
     children?: ReactNode
 }) {
     const settings = useSettings();
+    const editor = useEditor();
+
+    // Provide API keys for all providers to the agent
+    // The model is selected in the agent window, not here
+    const getSettings = useCallback((): AISettings => {
+        return {
+            providers: settings.ai?.providers as AISettings['providers'],
+            maxTokens: settings.ai?.maxTokens,
+            apiKey: settings.ai?.apiKey, // Legacy fallback for anthropic
+            customSystemPrompt: settings.ai?.customSystemPrompt,
+            customJsonSchema: settings.ai?.customJsonSchema,
+        };
+    }, [settings]);
+
+    // Create the TldrawAgent for AI chat integration
+    const isChatPanelEnabled = settings.ai?.enabled ?? false;
+    const agent = useTldrawAgent({
+        editor,
+        id: 'tldraw-in-obsidian-agent',
+        getSettings,
+    });
 
     // Track which panel is currently open (for mutual exclusivity)
     const [activePanel, setActivePanel] = useState<'layer' | 'chat' | null>(() => {
@@ -40,7 +65,6 @@ export default function InFrontOfTheCanvas({ children }: {
     }, [activePanel]);
 
     const isLayerPanelEnabled = settings.layerPanel?.enabled ?? false;
-    const isChatPanelEnabled = settings.ai?.enabled ?? false;
 
     return (
         <>
@@ -54,11 +78,15 @@ export default function InFrontOfTheCanvas({ children }: {
                 />
             )}
             {isChatPanelEnabled && (
-                <ChatPanel
-                    defaultCollapsed={!settings.ai?.showChatPanel}
-                    isOpen={activePanel === 'chat'}
-                    onOpenChange={handleChatPanelOpenChange}
-                />
+                <>
+                    <ChatPanel
+                        agent={agent}
+                        defaultCollapsed={!settings.ai?.showChatPanel}
+                        isOpen={activePanel === 'chat'}
+                        onOpenChange={handleChatPanelOpenChange}
+                    />
+                    <ContextHighlights agent={agent} />
+                </>
             )}
         </>
     );

@@ -10,6 +10,7 @@ import { createElement } from "react";
 import TldrawSettingsTabView from "src/components/settings/TldrawSettingsTabView";
 import { destinationMethods, themePreferenceRecord } from "./settings/constants";
 import { VIEW_TYPE_TLDRAW, ViewType } from "src/utils/constants";
+import type { AgentModelProvider } from "src/ai/models";
 
 export type ThemePreference = keyof typeof themePreferenceRecord;
 
@@ -87,7 +88,7 @@ export type UserTLCameraOptions = Pick<Partial<TLCameraOptions>, 'panSpeed' | 'z
 type MarkdownViewType = ViewType
 
 /**
- * Model information fetched from Anthropic API
+ * Model information fetched from provider API
  */
 export type AIModelInfo = {
 	id: string;
@@ -95,21 +96,59 @@ export type AIModelInfo = {
 };
 
 /**
- * AI assistant settings
+ * Per-provider settings including API key and available models
+ */
+export type AIProviderSettings = {
+	/** API key for this provider */
+	apiKey: string;
+	/** Available models fetched from this provider's API */
+	availableModels: AIModelInfo[];
+};
+
+/**
+ * AI assistant settings with multi-provider support
  */
 export type AISettings = {
 	/** Whether AI features are enabled */
 	enabled: boolean;
-	/** Anthropic API key */
-	apiKey: string;
+	/** The currently active AI provider */
+	activeProvider: AgentModelProvider;
+	/** Per-provider settings (API keys and models) */
+	providers: {
+		anthropic: AIProviderSettings;
+		google: AIProviderSettings;
+		openai: AIProviderSettings;
+	};
 	/** Selected AI model ID (e.g., 'claude-sonnet-4-20250514') */
 	model: string;
-	/** Available models fetched from API */
-	availableModels: AIModelInfo[];
 	/** Whether to show the chat panel by default */
 	showChatPanel: boolean;
 	/** Maximum tokens for AI responses */
 	maxTokens: number;
+	/** Temperature for AI responses (0-1). Lower = more deterministic. Not supported by all models. */
+	temperature: number;
+
+	/**
+	 * Custom system prompt to use instead of the default.
+	 * When set and non-empty, this prompt is used for AI interactions.
+	 * Stored in data.json to keep IPR-protected content out of git.
+	 */
+	customSystemPrompt?: string;
+	/**
+	 * Custom JSON schema to use instead of the default.
+	 * Should be a valid JSON string representing the response schema.
+	 * Stored in data.json to keep IPR-protected content out of git.
+	 */
+	customJsonSchema?: string;
+
+	/**
+	 * @deprecated Use `providers.anthropic.apiKey` instead. Kept for migration compatibility.
+	 */
+	apiKey?: string;
+	/**
+	 * @deprecated Use `providers[activeProvider].availableModels` instead. Kept for migration compatibility.
+	 */
+	availableModels?: AIModelInfo[];
 };
 
 export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings {
@@ -239,6 +278,14 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 	ai?: AISettings;
 }
 
+/**
+ * Default settings for the AI providers structure
+ */
+export const DEFAULT_AI_PROVIDER_SETTINGS: AIProviderSettings = {
+	apiKey: '',
+	availableModels: [],
+};
+
 export const DEFAULT_SETTINGS = {
 	saveFileDelay: 0.5,
 	newFilePrefix: "Tldraw ",
@@ -280,11 +327,19 @@ export const DEFAULT_SETTINGS = {
 	},
 	ai: {
 		enabled: false,
-		apiKey: '',
+		activeProvider: 'anthropic' as AgentModelProvider,
+		providers: {
+			anthropic: { ...DEFAULT_AI_PROVIDER_SETTINGS },
+			google: { ...DEFAULT_AI_PROVIDER_SETTINGS },
+			openai: { ...DEFAULT_AI_PROVIDER_SETTINGS },
+		},
 		model: '',
-		availableModels: [],
 		showChatPanel: false,
 		maxTokens: 4096,
+		temperature: 0,
+		// Deprecated fields kept for migration compatibility
+		apiKey: '',
+		availableModels: [],
 	},
 } as const satisfies Partial<TldrawPluginSettings>;
 
