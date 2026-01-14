@@ -1,12 +1,17 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { RecordsDiff, TLRecord, useValue } from 'tldraw';
+import { Notice, normalizePath } from 'obsidian';
 import { ChatInput } from './ChatInput';
 import { ChatHistory, ChatHistoryItem } from './chat-history/ChatHistory';
 import { StreamingActionLike } from './chat-history/ChatHistoryGroup';
 import { TodoList } from './TodoList';
 import { useTldrawSettings } from 'src/contexts/tldraw-settings-context';
+import { useObsidian } from 'src/contexts/plugin';
 import { TldrawAgent } from 'src/ai/agent/TldrawAgent';
 import { getAgentModelDefinition, AgentModelName } from 'src/ai/models';
+import { getColocationFolder } from 'src/obsidian/helpers/app';
+import { checkAndCreateFolder, getNewUniqueFilepath } from 'src/utils/utils';
+import { formatConversationToMarkdown } from './utils/formatConversationToMarkdown';
 
 export interface ChatPanelProps {
     /** The TldrawAgent instance for canvas interaction */
@@ -74,6 +79,25 @@ const NewChatIcon = () => (
     </svg>
 );
 
+// Download/save icon (arrow down)
+const DownloadIcon = () => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+);
+
 export function ChatPanel({
     agent,
     defaultCollapsed = true,
@@ -81,6 +105,7 @@ export function ChatPanel({
     isOpen: controlledIsOpen,
 }: ChatPanelProps) {
     const { settings } = useTldrawSettings();
+    const app = useObsidian();
     const [internalIsOpen, setInternalIsOpen] = useState(!defaultCollapsed);
 
     // Use agent's reactive state
@@ -153,6 +178,50 @@ export function ChatPanel({
         agent.reset();
     }, [agent]);
 
+    // Save conversation to markdown file
+    const handleSave = useCallback(async () => {
+        try {
+            // Check if there's anything to save
+            if (historyItems.length === 0) {
+                new Notice('No conversation to save');
+                return;
+            }
+
+            // Get the folder where the current file is located
+            const activeFile = app.workspace.getActiveFile();
+            const folder = getColocationFolder(app, activeFile ?? undefined);
+            const folderPath = folder.path;
+
+            // Generate filename with timestamp
+            const now = new Date();
+            const timestamp = now.toISOString()
+                .replace(/[-:]/g, '')
+                .replace('T', '-')
+                .slice(0, 15);
+            const filename = `conversation-${timestamp}.md`;
+
+            // Format conversation to markdown
+            const modelName = agent.$modelName.get();
+            const markdown = formatConversationToMarkdown(historyItems, {
+                modelName,
+            });
+
+            // Ensure folder exists
+            await checkAndCreateFolder(folderPath, app.vault);
+
+            // Get unique filepath (handles duplicates)
+            const filepath = getNewUniqueFilepath(app.vault, filename, folderPath);
+
+            // Create the file
+            await app.vault.create(filepath, markdown);
+
+            new Notice(`Conversation saved: ${filepath}`);
+        } catch (error) {
+            console.error('Error saving conversation:', error);
+            new Notice('Failed to save conversation');
+        }
+    }, [app, historyItems, agent]);
+
     // Get the current model from the agent's model selector
     const currentModelName = useValue('modelName', () => agent.$modelName.get(), [agent]);
 
@@ -210,6 +279,15 @@ export function ChatPanel({
                                 title="New chat"
                             >
                                 <NewChatIcon />
+                            </button>
+                            <button
+                                className="ptl-chat-panel-header-btn"
+                                onClick={handleSave}
+                                disabled={historyItems.length === 0}
+                                aria-label="Save conversation"
+                                title="Save conversation"
+                            >
+                                <DownloadIcon />
                             </button>
                             <button
                                 className="ptl-chat-panel-header-btn"
