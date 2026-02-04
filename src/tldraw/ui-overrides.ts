@@ -3,6 +3,7 @@ import { Platform, TFile } from "obsidian";
 import TldrawPlugin from "src/main";
 import { downloadBlob, getSaveFileCopyAction, getSaveFileCopyInVaultAction, importFileAction, OPEN_FILE_ACTION, SAVE_FILE_COPY_ACTION, SAVE_FILE_COPY_IN_VAULT_ACTION } from "src/utils/file";
 import LassoSelectTool from "./tools/lasso-select-tool";
+import { CommentTool } from "./tools/comment-tool";
 import { FileSearchModal } from "src/obsidian/modal/FileSearchModal";
 import { PdfImportModal, PdfImportCanceled } from "src/obsidian/modal/PdfImportModal";
 import { loadPdfMetadata, renderPdfPage } from "src/components/pdf";
@@ -25,6 +26,17 @@ export function uiOverrides(plugin: TldrawPlugin): TLUiOverrides {
 				kbd: 's',
 				onSelect() {
 					editor.setCurrentTool(LassoSelectTool.id);
+				},
+			};
+
+			// Add comment tool
+			tools[CommentTool.id] = {
+				id: CommentTool.id,
+				label: 'Comment' as any,
+				icon: 'comment',
+				kbd: 'c',
+				onSelect() {
+					editor.setCurrentTool(CommentTool.id);
 				},
 			};
 			return tools;

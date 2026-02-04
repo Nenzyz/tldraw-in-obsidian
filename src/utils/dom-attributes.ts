@@ -7,8 +7,8 @@ export abstract class PTLEditorBlockBlur {
      */
     static shouldEventBlockBlur(event: UIEvent) {
         return Boolean(
-            event.targetNode?.instanceOf(HTMLElement)
-                ? event.targetNode.closest(this.shouldBlockBlurSelector)
+            event.target instanceof HTMLElement
+                ? event.target.closest(this.shouldBlockBlurSelector)
                 : null
         )
     }

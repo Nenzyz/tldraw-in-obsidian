@@ -14,6 +14,15 @@ The build uses esbuild to bundle `src/main.ts` → `main.js` and `src/styles.css
 
 **Development workflow:** Clone to `.obsidian/plugins/tldraw-in-obsidian`, run `npm install`, then `npm run dev`. Reload Obsidian or toggle the plugin off/on to see changes.
 
+## Test Commands
+
+```bash
+npm test           # Run all tests once
+npm run test:watch # Watch mode - re-runs on file changes
+```
+
+Tests use Vitest with jsdom environment. Obsidian API is mocked in `src/test/__mocks__/obsidian.ts`. Path alias `src/` is available for imports.
+
 ## Architecture Overview
 
 This is an Obsidian plugin integrating the [Tldraw](https://tldraw.com) whiteboard into Obsidian. Drawings are stored as markdown files with embedded JSON data.
@@ -42,6 +51,15 @@ This is an Obsidian plugin integrating the [Tldraw](https://tldraw.com) whiteboa
   - Handles shared drawing ID routing
 - `asset-store.ts` - Manages image/font assets in vault
 - `ui-overrides.ts` - Custom menus, actions, toolbar components
+
+**AI System (`src/ai/`):**
+- Multi-provider architecture supporting Anthropic, OpenAI, and Google Gemini
+- `providers/types.ts` - Unified `AIProvider` interface all providers implement
+- `providers/factory.ts` - Dynamic provider loading with caching via `getProvider()`
+- `agent/TldrawAgent.ts` - Main agent class coordinating AI interactions with the canvas
+- `shared/actions/` - Action utilities that parse AI responses into canvas operations (create, move, delete, etc.)
+- `shared/parts/` - Prompt part builders that construct context for AI (shapes, viewport, history)
+- Provider-specific session state enables caching (Anthropic) and conversation continuity (OpenAI)
 
 ### Data Flow
 
@@ -76,6 +94,8 @@ React contexts in `src/contexts/` provide plugin instance, settings, and setting
 **UI Overrides:** Tldraw UI customization in `src/tldraw/ui-overrides.ts` - custom actions, tools, and components injected via tldraw's override system.
 
 **NPM Patches:** `patches/` contains tldraw patches (disabling source maps for pop-out windows). Run `npm install` to apply via `postinstall`.
+
+**AI Provider Pattern:** Each provider in `src/ai/providers/` implements the `AIProvider` interface with `streamAgentActions()` as the primary method. Actions are yielded incrementally with `complete: boolean` indicating parse status.
 
 ## Code Conventions
 

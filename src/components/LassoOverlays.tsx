@@ -1,10 +1,11 @@
 import * as React from 'react'
 import { TldrawOverlays, useEditor, useValue } from 'tldraw'
 import { LassoingState } from 'src/tldraw/tools/lasso-select-tool'
+import CommentConnectorOverlay from './CommentConnectorOverlay'
 
 /**
- * Renders visual feedback during lasso selection.
- * Extends TldrawOverlays with custom lasso polygon path.
+ * Renders visual feedback during lasso selection and comment connector lines.
+ * Extends TldrawOverlays with custom lasso polygon path and comment bindings.
  */
 export default function LassoOverlays() {
   const editor = useEditor()
@@ -43,6 +44,7 @@ export default function LassoOverlays() {
           />
         </svg>
       )}
+      <CommentConnectorOverlay />
     </>
   )
 }

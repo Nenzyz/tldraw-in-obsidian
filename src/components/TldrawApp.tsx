@@ -28,7 +28,7 @@ import { useClickAwayListener } from "src/hooks/useClickAwayListener";
 import { TLDataDocumentStore } from "src/utils/document";
 import PluginKeyboardShortcutsDialog from "./PluginKeyboardShortcutsDialog";
 import PluginQuickActions from "./PluginQuickActions";
-import { lockZoomIcon, lassoIcon } from "src/assets/data-icons";
+import { lockZoomIcon, lassoIcon, commentIcon } from "src/assets/data-icons";
 import { isObsidianThemeDark } from "src/utils/utils";
 import { TldrawInObsidianPluginProvider } from "src/contexts/plugin";
 import { TldrawSettingsProvider } from "src/contexts/tldraw-settings-context";
@@ -37,6 +37,8 @@ import { CustomToolbar } from "./CustomToolbar";
 import LassoOverlays from "./LassoOverlays";
 import { TargetAreaTool } from "src/ai/tools/TargetAreaTool";
 import { TargetShapeTool } from "src/ai/tools/TargetShapeTool";
+import { CommentShapeUtil } from "src/tldraw/shapes/comment";
+import { CommentTool } from "src/tldraw/tools/comment-tool";
 
 type TldrawAppOptions = {
 	iconAssetUrls?: TLUiAssetUrlOverrides['icons'],
@@ -135,10 +137,11 @@ function getEditorStoreProps(storeProps: TldrawAppStoreProps) {
 	}
 }
 
-// Default tools including AI context targeting tools
+// Default tools including AI context targeting tools and comment tool
 const defaultTools: TLStateNodeConstructor[] = [
 	TargetAreaTool,
 	TargetShapeTool,
+	CommentTool,
 ];
 
 const TldrawApp = ({ plugin, store,
@@ -166,6 +169,7 @@ const TldrawApp = ({ plugin, store,
 			...iconAssetUrls,
 			[PLUGIN_ACTION_TOGGLE_ZOOM_LOCK]: lockZoomIcon,
 			'lasso': lassoIcon,
+			'comment': commentIcon,
 		},
 	})
 	const overridesUi = React.useRef({
@@ -274,10 +278,11 @@ const TldrawApp = ({ plugin, store,
 	// Configure note shape resizability based on setting
 	const noteResizable = plugin.settings.tldrawOptions?.noteResizable ?? false;
 	const shapeUtils = useMemo(() => {
+		const utils: any[] = [CommentShapeUtil];
 		if (noteResizable) {
-			return [NoteShapeUtil.configure({ resizeMode: 'scale' })];
+			utils.push(NoteShapeUtil.configure({ resizeMode: 'scale' }));
 		}
-		return undefined;
+		return utils;
 	}, [noteResizable]);
 
 	return (

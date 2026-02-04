@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { RecordsDiff, TLRecord, useValue } from 'tldraw';
 import { Notice, normalizePath } from 'obsidian';
 import { ChatInput } from './ChatInput';
@@ -12,6 +12,7 @@ import { getAgentModelDefinition, AgentModelName } from 'src/ai/models';
 import { getColocationFolder } from 'src/obsidian/helpers/app';
 import { checkAndCreateFolder, getNewUniqueFilepath } from 'src/utils/utils';
 import { formatConversationToMarkdown } from './utils/formatConversationToMarkdown';
+import { useMentionMonitor } from 'src/hooks/useMentionMonitor';
 
 export interface ChatPanelProps {
     /** The TldrawAgent instance for canvas interaction */
@@ -114,6 +115,65 @@ export function ChatPanel({
 
     // Use controlled or uncontrolled mode
     const isPanelOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+    // Monitor for @AI mentions in comments
+    const { newMentions, markAllRead } = useMentionMonitor(agent.editor, {
+        pollInterval: 2000, // Check every 2 seconds
+        mentionId: 'AI',
+        enabled: settings.ai?.enabled ?? false,
+    });
+
+    // Track which mentions we've already processed to avoid duplicate triggers
+    const processedMentionIds = useRef<Set<string>>(new Set());
+
+    // Auto-trigger AI when new @AI mentions are detected
+    useEffect(() => {
+        if (!settings.ai?.enabled) return;
+        if (isGenerating) return; // Don't trigger while already generating
+        if (newMentions.length === 0) return;
+
+        // Find unprocessed mentions
+        const unprocessedMentions = newMentions.filter(mentionResult => {
+            // Create a unique key for each mention (comment + reply ids)
+            for (const reply of mentionResult.replies) {
+                const key = `${mentionResult.comment.id}:${reply.id}`;
+                if (!processedMentionIds.current.has(key)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        if (unprocessedMentions.length === 0) return;
+
+        // Mark all current mentions as processed
+        for (const mentionResult of unprocessedMentions) {
+            for (const reply of mentionResult.replies) {
+                const key = `${mentionResult.comment.id}:${reply.id}`;
+                processedMentionIds.current.add(key);
+            }
+        }
+
+        // Build context message for the AI
+        const mentionContext = unprocessedMentions.map(m => {
+            const replyMessages = m.replies.map(r => `- ${r.author}: "${r.message}"`).join('\n');
+            return `Comment thread (ID: ${m.comment.id}):\n${replyMessages}`;
+        }).join('\n\n');
+
+        const prompt = `You were mentioned in a comment thread. Please read and respond appropriately.\n\n${mentionContext}`;
+
+        // Trigger the AI with the mention context
+        agent.prompt({
+            message: prompt,
+            contextItems: [],
+        }).then(() => {
+            // Mark mentions as read after processing
+            markAllRead();
+        }).catch(error => {
+            console.error('Error responding to @AI mention:', error);
+        });
+
+    }, [newMentions, isGenerating, settings.ai?.enabled, agent, markAllRead]);
 
     // Create an empty diff for use when diff is missing
     const emptyDiff: RecordsDiff<TLRecord> = { added: {}, updated: {}, removed: {} };

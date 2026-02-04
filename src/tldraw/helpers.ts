@@ -1,24 +1,23 @@
 import { TLDataDocument, TLDataDocumentStore, TldrawPluginMetaData } from "src/utils/document";
 import { TLStore, createTLStore, defaultShapeUtils, defaultBindingUtils } from "tldraw";
+import { CommentShapeUtil } from "src/tldraw/shapes/comment";
 
 export function processInitialData(initialData: TLDataDocument): TLDataDocumentStore {
-	const { meta, store }: {
-		meta: TldrawPluginMetaData,
-		store: TLStore,
-	} = (() => {
-		if (initialData.store) {
-			return initialData;
-		}
+	// Always create a fresh store with CommentShapeUtil included
+	// If initialData.store exists, get its snapshot and use it as the initial data
+	const snapshot = initialData.store 
+		? initialData.store.getStoreSnapshot()
+		: undefined;
 
-		return {
-			meta: initialData.meta,
-			store: createTLStore({
-				shapeUtils: defaultShapeUtils,
-				bindingUtils: defaultBindingUtils,
-				initialData: initialData.raw,
-			})
-		}
-	})();
+	const store = createTLStore({
+		shapeUtils: [...defaultShapeUtils, CommentShapeUtil],
+		bindingUtils: defaultBindingUtils,
+		initialData: initialData.raw,
+		snapshot: snapshot,
+	});
 
-	return { meta, store };
+	return { 
+		meta: initialData.meta, 
+		store 
+	};
 }

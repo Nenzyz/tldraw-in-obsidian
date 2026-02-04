@@ -5,6 +5,7 @@ import { TldrawPluginMetaData } from "src/utils/document";
 import { isObsidianThemeDark } from "src/utils/utils";
 import monkeyPatchEditorInstance from "src/tldraw/monkey-patch/editor";
 import useUserPluginSettings from "./useUserPluginSettings";
+import { registerCommentBindingListeners } from "src/tldraw/shapes/comment/utils/comment-binding-listeners";
 
 /**
  * Check if the given text is valid SVG markup.
@@ -206,6 +207,19 @@ export function useTldrawAppEffects({
     }, [editor, settings]);
 
     /**
+     * Effect for comment binding listeners
+     * Automatically updates comment positions when bound shapes move
+     */
+    React.useEffect(() => {
+        if (!editor) return;
+
+        // Register comment binding listeners
+        const cleanup = registerCommentBindingListeners(editor);
+
+        return cleanup;
+    }, [editor]);
+
+    /**
      * Effect for fixing tooltip positioning in Obsidian.
      *
      * tldraw v4 tooltips use Radix UI and portal to document.body (not the tldraw container).
@@ -233,6 +247,9 @@ export function useTldrawAppEffects({
         };
 
         const fixTooltipPosition = (wrapper: HTMLElement) => {
+            // Set z-index to 900 (above the CSS class with 800 !important)
+            wrapper.style.zIndex = '900';
+
             const offset = getContainingBlockOffset();
             if (offset.x === 0 && offset.y === 0) return; // No offset needed
 

@@ -1,5 +1,6 @@
 import { logFn, TLDRAW_STORES_MANAGER_LOGGING } from "src/utils/logging";
 import { createTLStore, defaultBindingUtils, defaultShapeUtils, HistoryEntry, TLRecord, TLStore } from "tldraw";
+import { CommentShapeUtil } from "src/tldraw/shapes/comment";
 
 export type StoreInstanceInfo<T> = {
     instanceId: string,
@@ -14,11 +15,11 @@ type StoreInstance<T = unknown> = {
     /**
      * Controls if this instance should synchronize its modifications to the main store.
      * @param sync If true, then sync to main. If false, then do not sync to main.
-     * @returns 
+     * @returns
      */
     syncToMain: (sync: boolean) => void,
     /**
-     * 
+     *
      * @returns `true` if this instance is synchronizing its changes to the main store.
      */
     isSynchronizingToMain: () => boolean
@@ -34,10 +35,10 @@ export type StoreGroup<MainData = unknown, InstanceData = unknown> = {
      */
     instances: StoreInstance<InstanceData>[],
     /**
-     * 
+     *
      * @param source The source view
      * @param entry The entry that should be synced to the "main" store.
-     * @returns 
+     * @returns
      */
     apply: (instanceId: string, entry: HistoryEntry<TLRecord>) => void,
     getSharedId: () => string,
@@ -54,7 +55,7 @@ export type MainStore<MainData, InstanceData> = {
     data: MainData,
     /**
      * This will be called when all instances are removed.
-     * @returns 
+     * @returns
     */
     dispose: () => void,
     init: (storeGroup: StoreGroup<MainData, InstanceData>) => void,
@@ -75,7 +76,7 @@ export default class TldrawStoresManager<MainData, InstanceData> {
     dispose() { this.storeGroupMap.forEach((e) => e.unregister()); }
 
     /**
-     * 
+     *
      * @param info
      * @returns An object containing a new {@linkcode TLStore} instance.
      */
@@ -159,7 +160,7 @@ export default class TldrawStoresManager<MainData, InstanceData> {
 
     /**
      * Should call this when the shared id is modified.
-     * 
+     *
      * @param oldSharedId The shared id when {@linkcode registerInstance} was first called.
      */
     refreshSharedId(oldSharedId: string) {
@@ -184,13 +185,13 @@ export default class TldrawStoresManager<MainData, InstanceData> {
 
 /**
  * Create a new store that optionally synchronizes modifications to the "main" store.
- * @param source 
+ * @param source
  * @param storeGroup Contains the store to synchronize to
  */
 function createSourceStore<Group extends StoreGroup>(storeGroup: Group): TLStore {
     const snapshot = storeGroup.main.store.getStoreSnapshot();
     const store = createTLStore({
-        shapeUtils: defaultShapeUtils,
+        shapeUtils: [...defaultShapeUtils, CommentShapeUtil],
         bindingUtils: defaultBindingUtils,
         snapshot: snapshot,
     });

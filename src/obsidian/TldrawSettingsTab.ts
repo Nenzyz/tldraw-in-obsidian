@@ -275,6 +275,10 @@ export interface TldrawPluginSettings extends DeprecatedFileDestinationSettings 
 	/**
 	 * AI assistant settings
 	 */
+	/**
+	 * Username for comment attribution
+	 */
+	username?: string;
 	ai?: AISettings;
 }
 

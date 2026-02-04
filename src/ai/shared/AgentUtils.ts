@@ -25,6 +25,14 @@ import { ThinkActionUtil } from './actions/ThinkActionUtil'
 import { TodoListActionUtil } from './actions/TodoListActionUtil'
 import { UnknownActionUtil } from './actions/UnknownActionUtil'
 import { UpdateActionUtil } from './actions/UpdateActionUtil'
+import {
+	ReadCommentsActionUtil,
+	CreateCommentActionUtil,
+	UpdateCommentActionUtil,
+	AddReplyActionUtil,
+	ListMentionableShapesActionUtil,
+	GetCommentDetailsActionUtil,
+} from './actions/comment'
 import { BlurryShapesPartUtil } from './parts/BlurryShapesPartUtil'
 import { ChatHistoryPartUtil } from './parts/ChatHistoryPartUtil'
 import { ContextItemsPartUtil } from './parts/ContextItemsPartUtil'
@@ -121,6 +129,14 @@ export const AGENT_ACTION_UTILS = [
 	RandomWikipediaArticleActionUtil,
 	CountryInfoActionUtil,
 	CountShapesActionUtil,
+
+	// Comments
+	ReadCommentsActionUtil,
+	CreateCommentActionUtil,
+	UpdateCommentActionUtil,
+	AddReplyActionUtil,
+	ListMentionableShapesActionUtil,
+	GetCommentDetailsActionUtil,
 
 	// Internal (required)
 	UnknownActionUtil,

@@ -1,6 +1,6 @@
 /**
  * Created by combining two lucide icons and some minor adjustments
- * 
+ *
  * - https://lucide.dev/icons/lock
  * - https://lucide.dev/icons/search
  */
@@ -12,3 +12,8 @@ export const lockZoomIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL
  */
 export const lassoIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIyYTUgNSAwIDAgMS0yLTQiLz48cGF0aCBkPSJNMy4zIDE0QTYuOCA2LjggMCAwIDEgMiAxMGMwLTQuNCA0LjUtOCAxMC04czEwIDMuNiAxMCA4LTQuNSA4LTEwIDhhMTIgMTIgMCAwIDEtNS0xIi8+PHBhdGggZD0iTTUgMThhMiAyIDAgMSAwIDAtNCAyIDIgMCAwIDAgMCA0WiIvPjwvc3ZnPg==';
 
+/**
+ * Comment/Speech bubble icon from Lucide
+ * - https://lucide.dev/icons/message-circle
+ */
+export const commentIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03LjkgMjBBOSA5IDAgMSAwIDQgMTYuMUwyIDIyWiIvPjwvc3ZnPg==';

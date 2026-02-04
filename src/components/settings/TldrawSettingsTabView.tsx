@@ -8,8 +8,13 @@ import EmbedsSettings from "./EmbedsSettings";
 import AssetsSettings from "./AssetsSettings";
 import WorkspaceSettings from "./WorkspaceSettings";
 import AISettings from "./AISettings";
+import UserSettings from "./UserSettings";
 
 const TABS = {
+    'user': {
+        label: 'User',
+        Component: UserSettings,
+    },
     'file': {
         label: 'File',
         Component: FileSettings,

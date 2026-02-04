@@ -1,5 +1,6 @@
-import { TldrawFile, TLStore, parseTldrawJsonFile, createTLSchema, JsonObject, UnknownRecord } from "tldraw";
+import { TldrawFile, TLStore, createTLStore, parseTldrawJsonFile, createTLSchema, JsonObject, UnknownRecord, defaultShapeUtils, defaultBindingUtils, loadSnapshot } from "tldraw";
 import { TLData } from "../document";
+import { CommentShapeUtil } from "src/tldraw/shapes/comment";
 
 /**
  * Tldraw handles the migration here.
@@ -7,12 +8,28 @@ import { TLData } from "../document";
  * @returns 
  */
 export function migrateTldrawFileDataIfNecessary(tldrawFileData: string | TldrawFile): TLStore {
+    const json = typeof tldrawFileData === 'string'
+        ? JSON.parse(tldrawFileData)
+        : tldrawFileData;
+
+    // Extract comment shapes before parsing (to avoid schema validation errors)
+    const commentShapes: any[] = [];
+    if (json.records) {
+        // Filter out comment shapes and store them separately
+        json.records = json.records.filter((record: any) => {
+            if (record.typeName === 'shape' && record.type === 'comment') {
+                commentShapes.push(record);
+                return false;
+            }
+            return true;
+        });
+    }
+
+    // Parse using tldraw's parseTldrawJsonFile (handles migration, but without comment shapes)
     const res = parseTldrawJsonFile(
         {
             schema: createTLSchema(),
-            json: typeof tldrawFileData === 'string'
-                ? tldrawFileData
-                : JSON.stringify(tldrawFileData)
+            json: JSON.stringify(json)
         }
     );
 
@@ -20,7 +37,27 @@ export function migrateTldrawFileDataIfNecessary(tldrawFileData: string | Tldraw
         throw new Error('Unable to parse TldrawFile.');
     }
 
-    return res.value;
+    // Get the snapshot from the parsed store
+    const snapshot = res.value.getStoreSnapshot();
+
+    // Add comment shapes back to the snapshot
+    if (commentShapes.length > 0) {
+        snapshot.store = {
+            ...snapshot.store,
+            ...Object.fromEntries(commentShapes.map(shape => [shape.id, shape]))
+        };
+    }
+
+    // Create a new store with CommentShapeUtil included
+    const storeWithComments = createTLStore({
+        shapeUtils: [...defaultShapeUtils, CommentShapeUtil],
+        bindingUtils: defaultBindingUtils,
+    });
+
+    // Load the snapshot with comment shapes
+    loadSnapshot(storeWithComments, snapshot);
+
+    return storeWithComments;
 }
 
 function isJsonUnknownRecord(json: JsonObject): json is JsonObject & UnknownRecord {

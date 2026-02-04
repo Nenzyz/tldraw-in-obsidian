@@ -12,6 +12,7 @@ import {
     TldrawUiContextProvider,
     TLShape,
 } from 'tldraw';
+import { CommentShapeUtil } from 'src/tldraw/shapes/comment';
 
 /**
  * A simple tool that does nothing - used for read-only viewing.
@@ -23,6 +24,7 @@ class InspectTool extends StateNode {
 
 // All static props defined outside component to prevent remount loops in Obsidian
 const VIEWER_TOOLS = [InspectTool];
+const VIEWER_SHAPE_UTILS = [...defaultShapeUtils, CommentShapeUtil];
 const VIEWER_TEXT_OPTIONS = {
     tipTapConfig: {
         extensions: tipTapDefaultExtensions,
@@ -105,7 +107,7 @@ export function TldrawViewer({
                     components={componentsToUse}
                     inferDarkMode={false}
                     onMount={handleEditorMount}
-                    shapeUtils={defaultShapeUtils}
+                    shapeUtils={VIEWER_SHAPE_UTILS}
                     bindingUtils={defaultBindingUtils}
                     tools={VIEWER_TOOLS}
                     textOptions={VIEWER_TEXT_OPTIONS}

@@ -8,11 +8,17 @@ function isLaserScribbleAndKeepDelayAfterStop(item: ScribbleItem, userSettings: 
 
 export default function monkeyPatchEditorInstance(editor: Editor, userSettings: UserSettingsManager) {
     /**
+     * Attach plugin settings to the editor for access in tools and utilities.
+     * This allows tools like CommentTool to access the current username.
+     */
+    (editor as any)._pluginSettings = userSettings.settings;
+
+    /**
      * Modified from tldraw package source: packages/editor/src/lib/editor/managers/ScribbleManager.ts
-     * 
+     *
      * The original {@linkcode editor.scribbles.stop} method hardcodes a maximum 200 millisecond
      * delay before any scribble disappears.
-     * 
+     *
      * For our purposes, we allow only the laser color to ignore this delay.
      */
     editor.scribbles.stop = function stop(id: ScribbleItem['id']) {
@@ -27,8 +33,8 @@ export default function monkeyPatchEditorInstance(editor: Editor, userSettings: 
 
     /**
      * Modified from tldraw package source: packages/editor/src/lib/editor/managers/ScribbleManager.ts
-     * 
-     * The original {@linkcode editor.scribbles.tick} method resets the scribble item delay 
+     *
+     * The original {@linkcode editor.scribbles.tick} method resets the scribble item delay
      */
     editor.scribbles.tick = function tick(elapsed) {
         if (this.scribbleItems.size === 0) return

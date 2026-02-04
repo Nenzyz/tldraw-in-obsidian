@@ -8,8 +8,10 @@ import {
 	reverseRecordsDiff,
 	structuredClone,
 	TLRecord,
+	TLShapeId,
 	Vec,
 	VecModel,
+	createShapeId,
 } from 'tldraw'
 import { AgentActionUtil } from '../shared/actions/AgentActionUtil'
 import { AgentHelpers } from '../shared/AgentHelpers'
@@ -35,6 +37,15 @@ import { AgentModelName, DEFAULT_MODEL_NAME, getAgentModelDefinition } from '../
 import { ProviderSessionState, CacheMetrics } from '../providers/types'
 import { $agentsAtom } from './agentsAtom'
 import { streamAgent, AISettings } from './streamAgent'
+import type { TLCommentShape, Reply, Mention } from '../../tldraw/shapes/comment/CommentShape'
+import { addReply } from '../../tldraw/shapes/comment/utils/comment-helpers'
+import {
+	getCommentsSince,
+	getCommentsModifiedSince,
+	getMentionsSince,
+	getUnresolvedComments,
+	buildDeltaSummary,
+} from '../../tldraw/shapes/comment/utils/change-tracking'
 
 export interface TldrawAgentOptions {
 	/** The editor to associate the agent with. */
@@ -752,6 +763,289 @@ export class TldrawAgent {
 		}
 
 		return false
+	}
+
+	// ==================== Comment Integration Methods ====================
+
+	/**
+	 * Create a comment shape on the canvas.
+	 * The comment is authored by the AI agent ("AI").
+	 *
+	 * @param position - Canvas position for the comment
+	 * @param message - Initial message/content for the comment
+	 * @param boundShapeId - Optional shape ID to bind the comment to
+	 * @returns The ID of the created comment shape
+	 *
+	 * @example
+	 * ```tsx
+	 * // Create free-floating comment
+	 * agent.createComment({ x: 100, y: 200 }, 'This needs work')
+	 *
+	 * // Create comment bound to a shape
+	 * agent.createComment({ x: 100, y: 200 }, 'Fix this shape', shapeId)
+	 * ```
+	 */
+	createComment(
+		position: { x: number; y: number },
+		message: string,
+		boundShapeId?: TLShapeId
+	): TLShapeId {
+		const id = createShapeId()
+		const now = Date.now()
+
+		// Calculate offset if binding to a shape
+		let offset: { x: number; y: number } | undefined
+		if (boundShapeId) {
+			const targetShape = this.editor.getShape(boundShapeId)
+			if (targetShape) {
+				offset = {
+					x: position.x - targetShape.x,
+					y: position.y - targetShape.y,
+				}
+			}
+		}
+
+		// Create the comment shape with initial reply from AI
+		const initialReply: Reply = {
+			id: 'reply-' + now + '-' + Math.random().toString(36).substring(2, 9),
+			author: 'AI',
+			message,
+			timestamp: now,
+			mentions: [],
+		}
+
+		this.editor.createShape<TLCommentShape>({
+			id,
+			type: 'comment',
+			x: position.x,
+			y: position.y,
+			props: {
+				author: 'AI',
+				createdAt: now,
+				lastModified: now,
+				status: 'open',
+				replies: [initialReply],
+				boundShapeId,
+				offset,
+				w: 32,
+				h: 32,
+				color: 'black',
+			},
+		})
+
+		return id
+	}
+
+	/**
+	 * Add a reply to an existing comment.
+	 * The reply is authored by the AI agent ("AI").
+	 *
+	 * @param commentId - ID of the comment shape
+	 * @param message - Reply message text
+	 * @param mentions - Optional array of mentions to include in the reply
+	 *
+	 * @example
+	 * ```tsx
+	 * // Add simple reply
+	 * agent.addCommentReply(commentId, 'I can help with that!')
+	 *
+	 * // Add reply with mentions
+	 * agent.addCommentReply(commentId, 'Check out @Shape1', [mention])
+	 * ```
+	 */
+	addCommentReply(
+		commentId: TLShapeId,
+		message: string,
+		mentions: Mention[] = []
+	): void {
+		const reply: Reply = {
+			id: 'reply-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+			author: 'AI',
+			message,
+			timestamp: Date.now(),
+			mentions,
+		}
+
+		addReply(this.editor, commentId, reply)
+	}
+
+	/**
+	 * Respond to a specific reply in a comment thread.
+	 * This is a convenience method for adding a reply that references another reply.
+	 *
+	 * @param commentId - ID of the comment shape
+	 * @param replyId - ID of the reply being responded to
+	 * @param message - Response message text
+	 *
+	 * @example
+	 * ```tsx
+	 * agent.respondToMention(commentId, replyId, 'I agree with that point!')
+	 * ```
+	 */
+	respondToMention(
+		commentId: TLShapeId,
+		replyId: string,
+		message: string
+	): void {
+		const reply: Reply = {
+			id: 'reply-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+			author: 'AI',
+			message,
+			timestamp: Date.now(),
+			parentReplyId: replyId,
+			mentions: [],
+		}
+
+		addReply(this.editor, commentId, reply)
+	}
+
+	/**
+	 * Get all mentions in a specific comment's replies.
+	 *
+	 * @param commentId - ID of the comment shape
+	 * @returns Array of all mentions found in the comment's replies
+	 *
+	 * @example
+	 * ```tsx
+	 * const mentions = agent.getMentionsInComment(commentId)
+	 * const aiMentions = mentions.filter(m => m.type === 'agent' && m.id === 'AI')
+	 * ```
+	 */
+	getMentionsInComment(commentId: TLShapeId): Mention[] {
+		const comment = this.editor.getShape<TLCommentShape>(commentId)
+		if (!comment || comment.type !== 'comment') {
+			return []
+		}
+
+		const allMentions: Mention[] = []
+		for (const reply of comment.props.replies) {
+			allMentions.push(...reply.mentions)
+		}
+
+		return allMentions
+	}
+
+	/**
+	 * Get all comments on the canvas that contain @AI mentions.
+	 *
+	 * @returns Array of comment shapes that have @AI mentions in their replies
+	 *
+	 * @example
+	 * ```tsx
+	 * const mentionedComments = agent.getCommentsWithAIMentions()
+	 * for (const comment of mentionedComments) {
+	 *   agent.addCommentReply(comment.id, 'I saw your mention!')
+	 * }
+	 * ```
+	 */
+	getCommentsWithAIMentions(): TLCommentShape[] {
+		const allShapes = this.editor.getCurrentPageShapes()
+		const commentsWithAIMentions: TLCommentShape[] = []
+
+		for (const shape of allShapes) {
+			if (shape.type === 'comment') {
+				const comment = shape as TLCommentShape
+				const mentions = this.getMentionsInComment(comment.id)
+				const hasAIMention = mentions.some(
+					(m) => m.type === 'agent' && m.id === 'AI'
+				)
+				if (hasAIMention) {
+					commentsWithAIMentions.push(comment)
+				}
+			}
+		}
+
+		return commentsWithAIMentions
+	}
+
+	// ==================== Comment Change Tracking Methods ====================
+
+	/**
+	 * Get all comments created after a given timestamp.
+	 * This is a convenience method that wraps the change-tracking utility.
+	 *
+	 * @param timestamp - Unix milliseconds timestamp
+	 * @returns Array of comment shapes created after timestamp
+	 *
+	 * @example
+	 * ```tsx
+	 * const lastCheck = agent.getLastCheckedTimestamp()
+	 * const newComments = agent.getCommentsSince(lastCheck)
+	 * ```
+	 */
+	getCommentsSince(timestamp: number): TLCommentShape[] {
+		return getCommentsSince(this.editor, timestamp)
+	}
+
+	/**
+	 * Get all comments modified (new replies added) after a given timestamp.
+	 * This is a convenience method that wraps the change-tracking utility.
+	 *
+	 * @param timestamp - Unix milliseconds timestamp
+	 * @returns Array of comment shapes modified after timestamp
+	 *
+	 * @example
+	 * ```tsx
+	 * const lastCheck = agent.getLastCheckedTimestamp()
+	 * const modifiedComments = agent.getCommentsModifiedSince(lastCheck)
+	 * ```
+	 */
+	getCommentsModifiedSince(timestamp: number): TLCommentShape[] {
+		return getCommentsModifiedSince(this.editor, timestamp)
+	}
+
+	/**
+	 * Get all @AI mentions after a given timestamp.
+	 * This is a convenience method that wraps the change-tracking utility.
+	 *
+	 * @param timestamp - Unix milliseconds timestamp
+	 * @returns Array of results containing comments and replies with @AI mentions
+	 *
+	 * @example
+	 * ```tsx
+	 * const lastCheck = agent.getLastCheckedTimestamp()
+	 * const mentions = agent.getMentionsSince(lastCheck)
+	 * for (const { comment, replies } of mentions) {
+	 *   agent.addCommentReply(comment.id, 'Thanks for mentioning me!')
+	 * }
+	 * ```
+	 */
+	getMentionsSince(timestamp: number) {
+		return getMentionsSince(this.editor, timestamp, 'AI')
+	}
+
+	/**
+	 * Get all unresolved (open status) comments.
+	 * This is a convenience method that wraps the change-tracking utility.
+	 *
+	 * @returns Array of unresolved comment shapes
+	 *
+	 * @example
+	 * ```tsx
+	 * const unresolvedComments = agent.getUnresolvedComments()
+	 * console.log(`${unresolvedComments.length} comments need attention`)
+	 * ```
+	 */
+	getUnresolvedComments(): TLCommentShape[] {
+		return getUnresolvedComments(this.editor)
+	}
+
+	/**
+	 * Build a delta summary of comment activity since the last check.
+	 * This provides a human-readable summary for agent context.
+	 *
+	 * @param lastCheckedTimestamp - Unix milliseconds timestamp of last check
+	 * @returns Formatted summary string with counts and highlights
+	 *
+	 * @example
+	 * ```tsx
+	 * const lastCheck = agent.getLastCheckedTimestamp()
+	 * const summary = agent.buildDeltaSummary(lastCheck)
+	 * // "Since last check: 3 new comments, 5 new replies, 2 @AI mentions\n..."
+	 * ```
+	 */
+	buildDeltaSummary(lastCheckedTimestamp: number): string {
+		return buildDeltaSummary(this.editor, lastCheckedTimestamp)
 	}
 
 	/**

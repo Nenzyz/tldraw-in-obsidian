@@ -1,12 +1,15 @@
 import React, { ReactNode, useState, useCallback, useMemo } from "react"
-import { useEditor } from "tldraw";
+import { useEditor, useValue, TLShapeId } from "tldraw";
 import TextSuggestions from "./TextSuggestions";
 import LayerPanel from "./LayerPanel";
 import ChatPanel from "./ChatPanel";
+import { CommentNavigatorPanel } from "./CommentNavigatorPanel";
+import { CommentThreadPanel } from "./CommentThreadPanel";
 import { ContextHighlights } from "./ChatPanel/highlights";
 import { useSettings } from "src/contexts/tldraw-settings-context";
 import { useTldrawAgent } from "src/ai/agent/useTldrawAgent";
 import { AISettings } from "src/ai/agent/streamAgent";
+import type { TLCommentShape } from "src/tldraw/shapes/comment/CommentShape";
 
 export default function InFrontOfTheCanvas({ children }: {
     children?: ReactNode
@@ -35,7 +38,7 @@ export default function InFrontOfTheCanvas({ children }: {
     });
 
     // Track which panel is currently open (for mutual exclusivity)
-    const [activePanel, setActivePanel] = useState<'layer' | 'chat' | null>(() => {
+    const [activePanel, setActivePanel] = useState<'layer' | 'chat' | 'comment' | null>(() => {
         // Initialize based on default collapsed settings
         if (settings.layerPanel?.enabled && !settings.layerPanel?.defaultCollapsed) {
             return 'layer';
@@ -43,8 +46,28 @@ export default function InFrontOfTheCanvas({ children }: {
         if (settings.ai?.enabled && settings.ai?.showChatPanel) {
             return 'chat';
         }
+        // Comment navigator defaults to collapsed
         return null;
     });
+
+    // Get current username from settings (default to 'User')
+    const currentUser = settings.username || 'User';
+
+    // Track selected comment for thread panel
+    const selectedCommentId = useValue(
+        'selectedComment',
+        () => {
+            const selectedShapes = editor.getSelectedShapes();
+            if (selectedShapes.length === 1) {
+                const shape = selectedShapes[0];
+                if (shape.type === 'comment') {
+                    return shape.id as TLShapeId;
+                }
+            }
+            return null;
+        },
+        [editor]
+    );
 
     // Handle LayerPanel open/close with mutual exclusivity
     const handleLayerPanelOpenChange = useCallback((isOpen: boolean) => {
@@ -64,7 +87,18 @@ export default function InFrontOfTheCanvas({ children }: {
         }
     }, [activePanel]);
 
+    // Handle CommentNavigatorPanel open/close with mutual exclusivity
+    const handleCommentNavigatorOpenChange = useCallback((isOpen: boolean) => {
+        if (isOpen) {
+            setActivePanel('comment');
+        } else if (activePanel === 'comment') {
+            setActivePanel(null);
+        }
+    }, [activePanel]);
+
     const isLayerPanelEnabled = settings.layerPanel?.enabled ?? false;
+    // Comment navigator is always enabled (no settings toggle yet)
+    const isCommentNavigatorEnabled = true;
 
     return (
         <>
@@ -87,6 +121,21 @@ export default function InFrontOfTheCanvas({ children }: {
                     />
                     <ContextHighlights agent={agent} />
                 </>
+            )}
+            {isCommentNavigatorEnabled && (
+                <CommentNavigatorPanel
+                    defaultCollapsed={true}
+                    isOpen={activePanel === 'comment'}
+                    onOpenChange={handleCommentNavigatorOpenChange}
+                />
+            )}
+            {/* Comment Thread Panel - displays when a comment is selected */}
+            {selectedCommentId && (
+                <CommentThreadPanel
+                    commentId={selectedCommentId}
+                    currentUser={currentUser}
+                    onClose={() => editor.selectNone()}
+                />
             )}
         </>
     );
