@@ -37,13 +37,20 @@ const PROVIDER_INFO: Record<AgentModelProvider, {
         helpUrl: 'https://platform.openai.com/api-keys',
         helpLinkText: 'platform.openai.com',
     },
+    'openai-compatible': {
+        displayName: 'OpenAI-Compatible (Ollama)',
+        keyLabel: 'API key (optional)',
+        keyPlaceholder: 'Leave empty for Ollama',
+        helpUrl: 'https://ollama.ai',
+        helpLinkText: 'ollama.ai',
+    },
 };
 
 /**
  * Provider display order for dropdowns and grouping
  * Note: 'google' (Gemini) is intentionally hidden from UI but code remains intact
  */
-const PROVIDER_ORDER: AgentModelProvider[] = ['anthropic', 'openai'];
+const PROVIDER_ORDER: AgentModelProvider[] = ['anthropic', 'openai', 'openai-compatible'];
 
 function AIEnabledSetting() {
     const settingsManager = useSettingsManager();
@@ -190,6 +197,49 @@ function APIKeySetting() {
     );
 }
 
+function BaseURLSetting() {
+    const settingsManager = useSettingsManager();
+    const settings = useUserPluginSettings(settingsManager);
+
+    const activeProvider = settings.ai?.activeProvider ?? 'anthropic';
+    const aiEnabled = settings.ai?.enabled ?? false;
+    const baseUrl = settings.ai?.providers?.['openai-compatible']?.baseUrl
+        ?? DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl
+        ?? '';
+
+    const onBaseUrlChange = useCallback(async (value: string) => {
+        await settingsManager.updateAIProviderBaseUrl('openai-compatible', value);
+    }, [settingsManager]);
+
+    if (activeProvider !== 'openai-compatible') {
+        return null;
+    }
+
+    return (
+        <Setting
+            slots={{
+                name: 'Base URL',
+                desc: (
+                    <>
+                        Custom endpoint URL for OpenAI-compatible servers (Ollama, LM Studio, LocalAI).
+                        <code className="ptl-default-code">
+                            DEFAULT: {DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl}
+                        </code>
+                    </>
+                ),
+                control: (
+                    <Setting.Text
+                        value={baseUrl}
+                        placeholder={DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl}
+                        onChange={onBaseUrlChange}
+                    />
+                )
+            }}
+            disabled={!aiEnabled}
+        />
+    );
+}
+
 /**
  * Task 7.5: Model selection dropdown with provider grouping
  */
@@ -220,19 +270,18 @@ function ModelSelectionSetting() {
             const providerSettings = providers[provider];
             const hasKey = !!providerSettings?.apiKey;
             const providerModels = providerSettings?.availableModels ?? [];
+            const isConfigured = hasKey || provider === 'openai-compatible';
 
-            if (hasKey && providerModels.length > 0) {
-                // Add provider divider
+            if (isConfigured && providerModels.length > 0) {
                 const info = PROVIDER_INFO[provider];
                 options[`__divider_${provider}`] = `--- ${info.displayName} ---`;
 
-                // Add models for this provider
                 for (const m of providerModels) {
                     options[m.id] = m.displayName;
                     totalModels++;
                 }
                 configured.push(provider);
-            } else if (!hasKey) {
+            } else if (!isConfigured) {
                 unconfigured.push(provider);
             }
         }
@@ -308,11 +357,15 @@ function TestConnectionButton() {
     const aiEnabled = settings.ai?.enabled ?? false;
     const currentModel = settings.ai?.model ?? '';
     const apiKey = settings.ai?.providers?.[activeProvider]?.apiKey ?? '';
+    const baseUrl = settings.ai?.providers?.['openai-compatible']?.baseUrl
+        ?? DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl;
+
+    const requiresApiKey = activeProvider !== 'openai-compatible';
 
     const providerInfo = PROVIDER_INFO[activeProvider];
 
     const handleTestConnection = useCallback(async () => {
-        if (!apiKey) {
+        if (requiresApiKey && !apiKey) {
             setTestStatus('error');
             setErrorMessage(`Please enter a ${providerInfo.displayName} API key first.`);
             return;
@@ -324,7 +377,7 @@ function TestConnectionButton() {
 
         try {
             const provider = await getProvider(activeProvider);
-            const result = await provider.testConnection(apiKey);
+            const result = await provider.testConnection(apiKey, activeProvider === 'openai-compatible' ? baseUrl : undefined);
 
             if (result.success && result.models) {
                 // Convert to AIModelInfo format
@@ -359,12 +412,16 @@ function TestConnectionButton() {
             setErrorMessage('');
             setModelsLoaded(0);
         }, 5000);
-    }, [apiKey, activeProvider, currentModel, settingsManager, providerInfo]);
+    }, [apiKey, activeProvider, currentModel, settingsManager, providerInfo, baseUrl, requiresApiKey]);
 
     const getStatusText = () => {
         switch (testStatus) {
             case 'testing': return `Testing ${providerInfo.displayName}...`;
-            case 'success': return `${providerInfo.displayName} connected! ${modelsLoaded} models loaded.`;
+            case 'success':
+                if (activeProvider === 'openai-compatible') {
+                    return `Connected to ${baseUrl}. ${modelsLoaded} models loaded.`;
+                }
+                return `${providerInfo.displayName} connected! ${modelsLoaded} models loaded.`;
             case 'error': return errorMessage || 'Connection failed';
             default: return '';
         }
@@ -404,7 +461,7 @@ function TestConnectionButton() {
                     </Setting.Button>
                 )
             }}
-            disabled={!aiEnabled || !apiKey || testStatus === 'testing'}
+            disabled={!aiEnabled || (requiresApiKey && !apiKey) || testStatus === 'testing'}
         />
     );
 }
@@ -425,22 +482,28 @@ function ProviderStatusSetting() {
             const hasKey = !!providerSettings?.apiKey;
             const hasModels = (providerSettings?.availableModels?.length ?? 0) > 0;
             const info = PROVIDER_INFO[provider];
+            // openai-compatible doesn't require API key
+            const isConfigured = hasKey || provider === 'openai-compatible';
 
             let status: 'configured' | 'warning' | 'none';
             let statusIcon: string;
             let statusColor: string;
             let statusTooltip: string;
 
-            if (hasKey && hasModels) {
+            if (isConfigured && hasModels) {
                 status = 'configured';
                 statusIcon = '\u2713'; // checkmark
                 statusColor = 'var(--color-green)';
-                statusTooltip = 'API key configured and tested';
-            } else if (hasKey && !hasModels) {
+                statusTooltip = provider === 'openai-compatible' 
+                    ? 'Connected and tested' 
+                    : 'API key configured and tested';
+            } else if (isConfigured && !hasModels) {
                 status = 'warning';
                 statusIcon = '\u26A0'; // warning triangle
                 statusColor = 'var(--color-yellow)';
-                statusTooltip = 'API key set but not tested';
+                statusTooltip = provider === 'openai-compatible'
+                    ? 'Not tested - click Test Connection'
+                    : 'API key set but not tested';
             } else {
                 status = 'none';
                 statusIcon = '\u2014'; // em dash
@@ -485,6 +548,45 @@ function ProviderStatusSetting() {
                                     {item.statusIcon}
                                 </span>
                                 <span>{item.displayName}</span>
+                            </div>
+                        ))}
+                    </div>
+                ),
+                control: null
+            }}
+            disabled={!aiEnabled}
+        />
+    );
+}
+
+function LoadedModelsSetting() {
+    const settingsManager = useSettingsManager();
+    const settings = useUserPluginSettings(settingsManager);
+
+    const aiEnabled = settings.ai?.enabled ?? false;
+    const ollamaModels = settings.ai?.providers?.['openai-compatible']?.availableModels ?? [];
+
+    if (ollamaModels.length === 0) {
+        return null;
+    }
+
+    return (
+        <Setting
+            slots={{
+                name: 'Loaded Ollama models',
+                desc: (
+                    <div style={{ marginTop: '0.5em' }}>
+                        {ollamaModels.map((model: { id: string; displayName: string }) => (
+                            <div
+                                key={model.id}
+                                style={{
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.85em',
+                                    padding: '2px 0',
+                                    color: 'var(--text-muted)',
+                                }}
+                            >
+                                {model.id} → {model.displayName}
                             </div>
                         ))}
                     </div>
@@ -547,12 +649,14 @@ export default function AISettings() {
             <h2>API Configuration</h2>
             <Setting.Container>
                 <ProviderSelectionSetting />
+                <BaseURLSetting />
                 <APIKeySetting />
                 <TestConnectionButton />
                 <ProviderStatusSetting />
             </Setting.Container>
             <h2>Advanced</h2>
             <Setting.Container>
+                <LoadedModelsSetting />
                 <MaxTokensSetting />
             </Setting.Container>
             <h2>Custom Prompt Configuration</h2>
@@ -585,6 +689,7 @@ export default function AISettings() {
 export {
     AIEnabledSetting,
     ProviderSelectionSetting,
+    BaseURLSetting,
     APIKeySetting,
     ModelSelectionSetting,
     TestConnectionButton,

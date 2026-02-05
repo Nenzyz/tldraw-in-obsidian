@@ -21,25 +21,23 @@ describe('streamAgent Integration', () => {
 	describe('getApiKeyForProvider', () => {
 		it('returns API key from new multi-provider schema', () => {
 			const settings = {
-				ai: {
-					providers: {
-						anthropic: { apiKey: 'sk-ant-test' },
-						google: { apiKey: 'AIza-test' },
-						openai: { apiKey: 'sk-test' },
-					},
+				providers: {
+					anthropic: { apiKey: 'sk-ant-test' },
+					google: { apiKey: 'AIza-test' },
+					openai: { apiKey: 'sk-test' },
+					'openai-compatible': { apiKey: '' },
 				},
 			}
 
 			expect(getApiKeyForProvider(settings, 'anthropic')).toBe('sk-ant-test')
 			expect(getApiKeyForProvider(settings, 'google')).toBe('AIza-test')
 			expect(getApiKeyForProvider(settings, 'openai')).toBe('sk-test')
+			expect(getApiKeyForProvider(settings, 'openai-compatible')).toBe('')
 		})
 
 		it('falls back to old schema for anthropic', () => {
 			const settings = {
-				ai: {
-					apiKey: 'legacy-anthropic-key',
-				},
+				apiKey: 'legacy-anthropic-key',
 			}
 
 			expect(getApiKeyForProvider(settings, 'anthropic')).toBe('legacy-anthropic-key')
@@ -49,11 +47,9 @@ describe('streamAgent Integration', () => {
 
 		it('prefers new schema over old schema', () => {
 			const settings = {
-				ai: {
-					apiKey: 'old-key',
-					providers: {
-						anthropic: { apiKey: 'new-key' },
-					},
+				apiKey: 'old-key',
+				providers: {
+					anthropic: { apiKey: 'new-key' },
 				},
 			}
 
@@ -62,21 +58,19 @@ describe('streamAgent Integration', () => {
 
 		it('returns undefined for unconfigured providers', () => {
 			const settings = {
-				ai: {
-					providers: {
-						anthropic: { apiKey: '' },
-						google: {},
-					},
+				providers: {
+					anthropic: { apiKey: '' },
+					google: {},
 				},
 			}
 
-			expect(getApiKeyForProvider(settings, 'anthropic')).toBeFalsy()
+			expect(getApiKeyForProvider(settings, 'anthropic')).toBe('')
 			expect(getApiKeyForProvider(settings, 'openai')).toBeUndefined()
 		})
 
 		it('handles missing ai settings gracefully', () => {
 			expect(getApiKeyForProvider({}, 'anthropic')).toBeUndefined()
-			expect(getApiKeyForProvider({ ai: {} }, 'google')).toBeUndefined()
+			expect(getApiKeyForProvider({}, 'google')).toBeUndefined()
 		})
 	})
 
@@ -134,9 +128,9 @@ describe('streamAgent Integration', () => {
 		})
 	})
 
-	describe('provider interface consistency', () => {
-		it('all providers implement streamAgentActions as async generator', async () => {
-			const providers = ['anthropic', 'google', 'openai'] as const
+		describe('provider interface consistency', () => {
+			it('all providers implement streamAgentActions as async generator', async () => {
+				const providers = ['anthropic', 'google', 'openai', 'openai-compatible'] as const
 
 			for (const providerName of providers) {
 				const provider = await getProvider(providerName)
@@ -158,8 +152,8 @@ describe('streamAgent Integration', () => {
 			}
 		})
 
-		it('all providers implement testConnection', async () => {
-			const providers = ['anthropic', 'google', 'openai'] as const
+			it('all providers implement testConnection', async () => {
+				const providers = ['anthropic', 'google', 'openai', 'openai-compatible'] as const
 
 			for (const providerName of providers) {
 				const provider = await getProvider(providerName)
@@ -167,8 +161,8 @@ describe('streamAgent Integration', () => {
 			}
 		})
 
-		it('all providers implement parseError', async () => {
-			const providers = ['anthropic', 'google', 'openai'] as const
+			it('all providers implement parseError', async () => {
+				const providers = ['anthropic', 'google', 'openai', 'openai-compatible'] as const
 
 			for (const providerName of providers) {
 				const provider = await getProvider(providerName)
@@ -185,9 +179,9 @@ describe('streamAgent Integration', () => {
 		})
 	})
 
-	describe('error handling', () => {
-		it('parseError returns correct provider for each provider', async () => {
-			const providers = ['anthropic', 'google', 'openai'] as const
+		describe('error handling', () => {
+			it('parseError returns correct provider for each provider', async () => {
+				const providers = ['anthropic', 'google', 'openai', 'openai-compatible'] as const
 
 			for (const providerName of providers) {
 				const provider = await getProvider(providerName)
@@ -196,8 +190,8 @@ describe('streamAgent Integration', () => {
 			}
 		})
 
-		it('unknown errors are marked as not retryable', async () => {
-			const providers = ['anthropic', 'google', 'openai'] as const
+			it('unknown errors are marked as not retryable', async () => {
+				const providers = ['anthropic', 'google', 'openai', 'openai-compatible'] as const
 
 			for (const providerName of providers) {
 				const provider = await getProvider(providerName)

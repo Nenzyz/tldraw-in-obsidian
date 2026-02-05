@@ -177,7 +177,7 @@ function formatModelName(modelId: string): string {
  * @param apiKey - The API key to test
  * @returns Connection result with success status and available models
  */
-export async function testAnthropicConnection(apiKey: string): Promise<ConnectionResult> {
+export async function testAnthropicConnection(apiKey: string, _baseUrl?: string): Promise<ConnectionResult> {
     if (!apiKey || !apiKey.trim()) {
         return { success: false, error: 'API key is required' };
     }
@@ -731,8 +731,8 @@ export const anthropicProvider: AIProvider = {
         yield* streamAgentActions(options);
     },
 
-    async testConnection(apiKey: string): Promise<ConnectionResult> {
-        return testAnthropicConnection(apiKey);
+    async testConnection(apiKey: string, baseUrl?: string): Promise<ConnectionResult> {
+        return testAnthropicConnection(apiKey, baseUrl);
     },
 
     parseError(error: unknown): AIError {

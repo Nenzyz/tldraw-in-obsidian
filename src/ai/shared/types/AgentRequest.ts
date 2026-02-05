@@ -1,5 +1,4 @@
 import { BoxModel, JsonValue } from 'tldraw'
-import { AgentModelName } from '../../models'
 import { SimpleShape } from '../format/SimpleShape'
 import { ContextItem } from './ContextItem'
 
@@ -34,9 +33,9 @@ export interface AgentRequest {
 	bounds: BoxModel
 
 	/**
-	 * The model to use for the request.
+	 * The model to use for the request (predefined or dynamic from openai-compatible).
 	 */
-	modelName: AgentModelName
+	modelName: string
 
 	/**
 	 * The type of request.

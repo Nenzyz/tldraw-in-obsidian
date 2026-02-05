@@ -178,7 +178,7 @@ function formatModelName(modelName: string): string {
  * @param apiKey - The API key to test
  * @returns Connection result with success status and available models
  */
-export async function testGeminiConnection(apiKey: string): Promise<ConnectionResult> {
+export async function testGeminiConnection(apiKey: string, _baseUrl?: string): Promise<ConnectionResult> {
     if (!apiKey || !apiKey.trim()) {
         return { success: false, error: 'API key is required' };
     }
@@ -554,8 +554,8 @@ export const geminiProvider: AIProvider = {
         yield* streamGeminiAgentActions(options);
     },
 
-    async testConnection(apiKey: string): Promise<ConnectionResult> {
-        return testGeminiConnection(apiKey);
+    async testConnection(apiKey: string, baseUrl?: string): Promise<ConnectionResult> {
+        return testGeminiConnection(apiKey, baseUrl);
     },
 
     parseError(error: unknown): AIError {

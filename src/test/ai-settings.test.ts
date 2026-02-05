@@ -24,6 +24,8 @@ describe('AI Settings', () => {
             expect(DEFAULT_SETTINGS.ai.providers.anthropic.availableModels).toEqual([]);
             expect(DEFAULT_SETTINGS.ai.providers.google.apiKey).toBe('');
             expect(DEFAULT_SETTINGS.ai.providers.openai.apiKey).toBe('');
+            expect(DEFAULT_SETTINGS.ai.providers['openai-compatible'].apiKey).toBe('');
+            expect(DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl).toBe('http://localhost:11434/v1');
             // Model starts empty because models are fetched dynamically from API
             expect(DEFAULT_SETTINGS.ai.model).toBe('');
             expect(DEFAULT_SETTINGS.ai.showChatPanel).toBe(false);
@@ -134,6 +136,7 @@ describe('AI Settings', () => {
                             { id: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' }
                         ]},
                         openai: { apiKey: '', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: 'gemini-2.5-flash',
                     showChatPanel: true,
@@ -155,6 +158,24 @@ describe('AI Settings', () => {
                 { id: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' }
             ]);
             expect(storeSettings.ai?.model).toBe('gemini-2.5-flash');
+        });
+
+        it('should persist baseUrl changes for openai-compatible provider', async () => {
+            mockPlugin.loadData.mockResolvedValue({});
+            await settingsManager.loadSettings();
+
+            await settingsManager.updateAIProviderBaseUrl('openai-compatible', 'http://localhost:1234/v1');
+
+            expect(mockPlugin.saveData).toHaveBeenCalled();
+            const savedSettings = mockPlugin.saveData.mock.calls[0][0];
+            expect(savedSettings.ai.providers['openai-compatible'].baseUrl).toBe('http://localhost:1234/v1');
+        });
+
+        it('should return default baseUrl when not set', async () => {
+            mockPlugin.loadData.mockResolvedValue({});
+            await settingsManager.loadSettings();
+
+            expect(settingsManager.getAIProviderBaseUrl('openai-compatible')).toBe('http://localhost:11434/v1');
         });
     });
 });

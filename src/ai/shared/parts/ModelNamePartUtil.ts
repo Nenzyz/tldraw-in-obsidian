@@ -1,10 +1,9 @@
-import { AgentModelName } from '../../models'
 import { AgentRequest } from '../types/AgentRequest'
 import { BasePromptPart } from '../types/BasePromptPart'
 import { PromptPartUtil } from './PromptPartUtil'
 
 export interface ModelNamePart extends BasePromptPart<'modelName'> {
-	name: AgentModelName
+	name: string
 }
 
 export class ModelNamePartUtil extends PromptPartUtil<ModelNamePart> {

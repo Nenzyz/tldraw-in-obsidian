@@ -77,12 +77,12 @@ describe('Multi-Provider Settings UI', () => {
             expect(savedSettings.ai.activeProvider).toBe('google');
         });
 
-        it('should support switching between all three providers', async () => {
+        it('should support switching between all providers', async () => {
             mockPlugin.loadData.mockResolvedValue({});
             await settingsManager.loadSettings();
 
             // Test each provider
-            const providers: AgentModelProvider[] = ['anthropic', 'google', 'openai'];
+            const providers: AgentModelProvider[] = ['anthropic', 'google', 'openai', 'openai-compatible'];
             for (const provider of providers) {
                 mockPlugin.saveData.mockClear();
                 await settingsManager.updateAIActiveProvider(provider);
@@ -115,6 +115,7 @@ describe('Multi-Provider Settings UI', () => {
             expect(savedSettings.ai.providers.anthropic.apiKey).toBe('sk-ant-test-key');
             expect(savedSettings.ai.providers.google.apiKey).toBe('');
             expect(savedSettings.ai.providers.openai.apiKey).toBe('');
+            expect(savedSettings.ai.providers['openai-compatible'].apiKey).toBe('');
         });
 
         it('should read API key for a specific provider', async () => {
@@ -126,6 +127,7 @@ describe('Multi-Provider Settings UI', () => {
                         anthropic: { apiKey: 'ant-key', availableModels: [] },
                         google: { apiKey: 'google-key', availableModels: [] },
                         openai: { apiKey: 'openai-key', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: '',
                     showChatPanel: false,
@@ -138,6 +140,7 @@ describe('Multi-Provider Settings UI', () => {
             expect(settingsManager.getAIProviderApiKey('anthropic')).toBe('ant-key');
             expect(settingsManager.getAIProviderApiKey('google')).toBe('google-key');
             expect(settingsManager.getAIProviderApiKey('openai')).toBe('openai-key');
+            expect(settingsManager.getAIProviderApiKey('openai-compatible')).toBe('');
         });
 
         it('should update API key for active provider correctly', async () => {
@@ -149,6 +152,7 @@ describe('Multi-Provider Settings UI', () => {
                         anthropic: { apiKey: '', availableModels: [] },
                         google: { apiKey: '', availableModels: [] },
                         openai: { apiKey: '', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: '',
                     showChatPanel: false,
@@ -203,6 +207,7 @@ describe('Multi-Provider Settings UI', () => {
                             ]
                         },
                         openai: { apiKey: '', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: 'claude-sonnet',
                     showChatPanel: false,
@@ -214,6 +219,7 @@ describe('Multi-Provider Settings UI', () => {
             expect(settingsManager.getAIProviderAvailableModels('anthropic')).toHaveLength(1);
             expect(settingsManager.getAIProviderAvailableModels('google')).toHaveLength(1);
             expect(settingsManager.getAIProviderAvailableModels('openai')).toHaveLength(0);
+            expect(settingsManager.getAIProviderAvailableModels('openai-compatible')).toHaveLength(0);
         });
     });
 
@@ -237,6 +243,7 @@ describe('Multi-Provider Settings UI', () => {
                             ]
                         },
                         openai: { apiKey: '', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: '',
                     showChatPanel: false,
@@ -279,6 +286,13 @@ describe('Multi-Provider Settings UI', () => {
                                 { id: 'gpt-2', displayName: 'GPT 2' }
                             ]
                         },
+                        'openai-compatible': {
+                            apiKey: '',
+                            availableModels: [
+                                { id: 'llama3', displayName: 'Llama 3' }
+                            ],
+                            baseUrl: 'http://localhost:11434/v1',
+                        },
                     },
                     model: '',
                     showChatPanel: false,
@@ -292,9 +306,10 @@ describe('Multi-Provider Settings UI', () => {
                 ...settingsManager.getAIProviderAvailableModels('anthropic'),
                 ...settingsManager.getAIProviderAvailableModels('google'),
                 ...settingsManager.getAIProviderAvailableModels('openai'),
+                ...settingsManager.getAIProviderAvailableModels('openai-compatible'),
             ];
 
-            expect(allModels).toHaveLength(5);
+            expect(allModels).toHaveLength(6);
         });
     });
 });

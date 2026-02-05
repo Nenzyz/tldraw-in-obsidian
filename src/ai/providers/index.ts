@@ -32,3 +32,4 @@ export type {
 export { anthropicProvider } from './anthropic';
 export { geminiProvider } from './gemini';
 export { openaiProvider } from './openai';
+export { openaiCompatibleProvider } from './openai-compatible';

@@ -120,6 +120,8 @@ export interface StreamOptions {
     temperature?: number;
     /** Optional abort signal for cancellation */
     signal?: AbortSignal;
+    /** Base URL for OpenAI-compatible providers */
+    baseUrl?: string;
     /**
      * Previous response ID for OpenAI Responses API session continuity.
      * When provided, enables server-side conversation state persistence.
@@ -198,7 +200,7 @@ export interface AIProvider {
      * @param apiKey - The API key to test
      * @returns Connection result with success status and available models
      */
-    testConnection(apiKey: string): Promise<ConnectionResult>;
+    testConnection(apiKey: string, baseUrl?: string): Promise<ConnectionResult>;
 
     /**
      * Parse a provider-specific error into the common AIError format.

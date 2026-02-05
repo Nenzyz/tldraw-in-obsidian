@@ -11,6 +11,7 @@ import {
     anthropicProvider,
     geminiProvider,
     openaiProvider,
+    openaiCompatibleProvider,
 } from '../ai/providers';
 import type { AIProvider, AIError, AIErrorType } from '../ai/providers';
 import type { AgentModelProvider } from '../ai/models';
@@ -52,6 +53,16 @@ describe('Provider Abstraction Layer', () => {
             expect(typeof provider.testConnection).toBe('function');
             expect(typeof provider.parseError).toBe('function');
         });
+
+        it('should enforce AIProvider interface on OpenAI-compatible provider', () => {
+            const provider: AIProvider = openaiCompatibleProvider;
+
+            expect(provider.name).toBe('openai-compatible');
+            expect(typeof provider.createClient).toBe('function');
+            expect(typeof provider.streamAgentActions).toBe('function');
+            expect(typeof provider.testConnection).toBe('function');
+            expect(typeof provider.parseError).toBe('function');
+        });
     });
 
     describe('Factory function', () => {
@@ -74,6 +85,13 @@ describe('Provider Abstraction Layer', () => {
 
             expect(provider).toBe(openaiProvider);
             expect(provider.name).toBe('openai');
+        });
+
+        it('should return correct provider type for openai-compatible', async () => {
+            const provider = await getProvider('openai-compatible');
+
+            expect(provider).toBe(openaiCompatibleProvider);
+            expect(provider.name).toBe('openai-compatible');
         });
 
         it('should cache provider instances', async () => {
@@ -126,10 +144,12 @@ describe('Provider Abstraction Layer', () => {
             const anthropicError = anthropicProvider.parseError(testError);
             const geminiError = geminiProvider.parseError(testError);
             const openaiError = openaiProvider.parseError(testError);
+            const openaiCompatibleError = openaiCompatibleProvider.parseError(testError);
 
             expect(anthropicError.provider).toBe('anthropic');
             expect(geminiError.provider).toBe('google');
             expect(openaiError.provider).toBe('openai');
+            expect(openaiCompatibleError.provider).toBe('openai-compatible');
         });
 
         it('should cover all expected AIErrorType values', () => {
@@ -161,6 +181,7 @@ describe('Provider Abstraction Layer', () => {
             expect(isProviderSupported('anthropic')).toBe(true);
             expect(isProviderSupported('google')).toBe(true);
             expect(isProviderSupported('openai')).toBe(true);
+            expect(isProviderSupported('openai-compatible')).toBe(true);
         });
 
         it('should return false for unsupported providers', () => {

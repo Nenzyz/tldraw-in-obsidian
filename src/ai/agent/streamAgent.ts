@@ -9,7 +9,7 @@
  */
 
 import { getProvider } from '../providers'
-import { getAgentModelDefinition, AgentModelName, AgentModelProvider } from '../models'
+import { getModelDefinition, AgentModelProvider } from '../models'
 import { buildMessages } from '../prompt/buildMessages'
 import { buildSystemPrompt } from '../prompt/buildSystemPrompt'
 import { ProviderSessionState } from '../providers/types'
@@ -22,6 +22,7 @@ export interface AISettings {
 		anthropic?: { apiKey?: string }
 		google?: { apiKey?: string }
 		openai?: { apiKey?: string }
+		'openai-compatible'?: { apiKey?: string; baseUrl?: string }
 	}
 	maxTokens?: number
 	/** Temperature for AI responses (0-1). Lower = more deterministic. Not supported by all models. */
@@ -50,8 +51,8 @@ export interface AISettings {
 export interface StreamAgentOptions {
 	prompt: BaseAgentPrompt
 	signal: AbortSignal
-	/** Friendly model name from agent window (e.g., "gpt-4o") */
-	modelName: AgentModelName
+	/** Model name from agent window (e.g., "gpt-4o" or dynamic Ollama model) */
+	modelName: string
 	/** Settings containing API keys for all providers */
 	settings: AISettings
 }
@@ -65,7 +66,7 @@ export function getApiKeyForProvider(
 ): string | undefined {
 	// Try new multi-provider schema first
 	const providerApiKey = settings?.providers?.[provider]?.apiKey
-	if (providerApiKey) {
+	if (providerApiKey !== undefined) {
 		return providerApiKey
 	}
 
@@ -89,19 +90,19 @@ export async function* streamAgent({
 	modelName,
 	settings,
 }: StreamAgentOptions): AsyncGenerator<Streaming<AgentAction>> {
-	// 1. Look up provider and real API model ID from friendly name
-	const modelDefinition = getAgentModelDefinition(modelName)
+	const modelDefinition = getModelDefinition(modelName)
 	const provider = modelDefinition.provider
 	const realModelId = modelDefinition.id
 
 	// 2. Get API key for that provider
 	const apiKey = getApiKeyForProvider(settings, provider)
 
-	if (!apiKey) {
+	if (!apiKey && provider !== 'openai-compatible') {
 		const providerNames: Record<AgentModelProvider, string> = {
 			anthropic: 'Anthropic (Claude)',
 			google: 'Google (Gemini)',
 			openai: 'OpenAI (GPT)',
+			'openai-compatible': 'OpenAI-Compatible (Ollama)',
 		}
 		const displayName = providerNames[provider] || provider
 		throw new Error(
@@ -131,16 +132,20 @@ export async function* streamAgent({
 	// 5. Extract provider-specific session state for caching/session continuity
 	const providerSessionState = settings?.providerSessionState
 	const previousResponseId = providerSessionState?.openai?.responseId
+	const baseUrl = provider === 'openai-compatible'
+		? settings?.providers?.['openai-compatible']?.baseUrl
+		: undefined
 
 	// 6. Call provider's API with real model ID
 	for await (const action of providerImpl.streamAgentActions({
-		apiKey,
+		apiKey: apiKey ?? '',
 		modelId: realModelId,
 		messages: apiMessages,
 		systemPrompt,
 		maxTokens,
 		temperature,
 		signal,
+		baseUrl,
 		// Pass through session options for provider-specific handling
 		previousResponseId,
 		// Enable caching by default (providers can check this)

@@ -65,7 +65,7 @@ describe('Model Definitions', () => {
 				expect(model.provider).toBeTruthy();
 
 				// Verify provider is a valid type
-				expect(['anthropic', 'google', 'openai']).toContain(model.provider);
+		expect(['anthropic', 'google', 'openai', 'openai-compatible']).toContain(model.provider);
 			}
 		});
 

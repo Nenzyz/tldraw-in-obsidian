@@ -93,6 +93,7 @@ describe('AI Settings Migration', () => {
                         anthropic: { apiKey: '', availableModels: [] },
                         google: { apiKey: '', availableModels: [] },
                         openai: { apiKey: 'sk-openai-key', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: 'gpt-4o',
                     showChatPanel: true,
@@ -132,6 +133,11 @@ describe('AI Settings Migration', () => {
                                 { id: 'gpt-4o', displayName: 'GPT-4o' }
                             ]
                         },
+                        'openai-compatible': {
+                            apiKey: '',
+                            availableModels: [],
+                            baseUrl: 'http://localhost:11434/v1',
+                        },
                     },
                     model: 'claude-sonnet-4-20250514',
                     showChatPanel: true,
@@ -158,6 +164,7 @@ describe('AI Settings Migration', () => {
                         anthropic: { apiKey: 'ant-key', availableModels: [] },
                         google: { apiKey: 'google-key', availableModels: [] },
                         openai: { apiKey: '', availableModels: [] },
+                        'openai-compatible': { apiKey: '', availableModels: [], baseUrl: 'http://localhost:11434/v1' },
                     },
                     model: 'gemini-2.5-flash',
                     showChatPanel: true,

@@ -103,6 +103,8 @@ export type AIProviderSettings = {
 	apiKey: string;
 	/** Available models fetched from this provider's API */
 	availableModels: AIModelInfo[];
+	/** Base URL for OpenAI-compatible providers */
+	baseUrl?: string;
 };
 
 /**
@@ -118,6 +120,7 @@ export type AISettings = {
 		anthropic: AIProviderSettings;
 		google: AIProviderSettings;
 		openai: AIProviderSettings;
+		'openai-compatible': AIProviderSettings;
 	};
 	/** Selected AI model ID (e.g., 'claude-sonnet-4-20250514') */
 	model: string;
@@ -336,6 +339,10 @@ export const DEFAULT_SETTINGS = {
 			anthropic: { ...DEFAULT_AI_PROVIDER_SETTINGS },
 			google: { ...DEFAULT_AI_PROVIDER_SETTINGS },
 			openai: { ...DEFAULT_AI_PROVIDER_SETTINGS },
+			'openai-compatible': {
+				...DEFAULT_AI_PROVIDER_SETTINGS,
+				baseUrl: 'http://localhost:11434/v1',
+			},
 		},
 		model: '',
 		showChatPanel: false,
@@ -359,7 +366,8 @@ export class TldrawSettingsTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		this.#root?.unmount();
-		const root = this.#root = createRoot(containerEl);
+		const root = createRoot(containerEl);
+		this.#root = root;
 		root.render(createElement(TldrawSettingsTabView, {
 			settingsManager: this.plugin.settingsManager,
 		}));

@@ -1,11 +1,11 @@
 import { getPromptPartUtilsRecord } from '../shared/AgentUtils'
 import { AgentPrompt } from '../shared/types/AgentPrompt'
-import { AgentModelName, DEFAULT_MODEL_NAME } from '../models'
+import { DEFAULT_MODEL_NAME } from '../models'
 
 /**
  * Get the selected model name from a prompt.
  */
-export function getModelName(prompt: AgentPrompt): AgentModelName {
+export function getModelName(prompt: AgentPrompt): string {
 	const utils = getPromptPartUtilsRecord()
 
 	for (const part of Object.values(prompt)) {

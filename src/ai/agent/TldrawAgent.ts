@@ -20,7 +20,7 @@ import { SimpleShape } from '../shared/format/SimpleShape'
 import { PromptPartUtil } from '../shared/parts/PromptPartUtil'
 import { AgentAction } from '../shared/types/AgentAction'
 import { AgentInput } from '../shared/types/AgentInput'
-import { AgentPrompt, BaseAgentPrompt } from '../shared/types/AgentPrompt'
+import { AgentPrompt } from '../shared/types/AgentPrompt'
 import { AgentRequest } from '../shared/types/AgentRequest'
 import { ChatHistoryItem } from '../shared/types/ChatHistoryItem'
 import {
@@ -33,7 +33,7 @@ import {
 import { PromptPart } from '../shared/types/PromptPart'
 import { Streaming } from '../shared/types/Streaming'
 import { TodoItem } from '../shared/types/TodoItem'
-import { AgentModelName, DEFAULT_MODEL_NAME, getAgentModelDefinition } from '../models'
+import { AgentModelProvider, DEFAULT_MODEL_NAME, getModelDefinition } from '../models'
 import { ProviderSessionState, CacheMetrics } from '../providers/types'
 import { $agentsAtom } from './agentsAtom'
 import { streamAgent, AISettings } from './streamAgent'
@@ -130,7 +130,7 @@ export class TldrawAgent {
 	 * Note: Prompt part utils may ignore or override this value. See the
 	 * ModelNamePartUtil for an example.
 	 */
-	$modelName = atom<AgentModelName>('modelName', DEFAULT_MODEL_NAME)
+	$modelName = atom<string>('modelName', DEFAULT_MODEL_NAME)
 
 	/**
 	 * An atom containing provider-specific session state for caching and
@@ -248,7 +248,7 @@ export class TldrawAgent {
 			selectedShapes: request.selectedShapes ?? [],
 			contextItems: request.contextItems ?? [],
 			bounds: request.bounds ?? activeRequest?.bounds ?? this.editor.getViewportPageBounds(),
-			modelName: request.modelName ?? activeRequest?.modelName ?? this.$modelName.get(),
+			modelName: request.modelName ?? this.$modelName.get(),
 		}
 	}
 
@@ -1052,11 +1052,11 @@ export class TldrawAgent {
 	 * Update provider session state after a successful request.
 	 * This method is called by requestAgent to persist session metadata.
 	 *
-	 * @param provider - The provider that was used (anthropic, openai, google)
+	 * @param provider - The provider that was used (anthropic, openai, google, openai-compatible)
 	 * @param metadata - Session metadata from the final StreamAction
 	 */
 	updateProviderSessionState(
-		provider: 'anthropic' | 'openai' | 'google',
+		provider: AgentModelProvider,
 		metadata: { responseId?: string; cacheMetrics?: CacheMetrics }
 	) {
 		if (provider === 'openai' && metadata.responseId) {
@@ -1137,13 +1137,7 @@ function requestAgent({ agent, request }: { agent: TldrawAgent; request: AgentRe
 		const modelName = request.modelName ?? agent.$modelName.get()
 
 		// Get the provider for this model to determine which session state to use
-		let provider: 'anthropic' | 'openai' | 'google' = 'anthropic'
-		try {
-			provider = getAgentModelDefinition(modelName).provider
-		} catch {
-			// If model not found, default to anthropic
-			debugAgent('REQUEST', 'Could not determine provider for model, defaulting to anthropic')
-		}
+		const provider = getModelDefinition(modelName).provider
 
 		// Include provider session state in settings for session continuity
 		const providerSessionState = agent.$providerSessionState.get()

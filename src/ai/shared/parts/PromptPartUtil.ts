@@ -1,6 +1,5 @@
 import { Editor } from 'tldraw'
 import { TldrawAgent } from '../../agent/TldrawAgent'
-import { AgentModelName } from '../../models'
 import { PromptBuildSettings } from '../../prompt/buildSystemPrompt'
 import { AgentHelpers } from '../AgentHelpers'
 import { AgentMessage, AgentMessageContent } from '../types/AgentMessage'
@@ -39,7 +38,7 @@ export abstract class PromptPartUtil<T extends BasePromptPart = BasePromptPart> 
 	 * Get the name of the model to use for this generation.
 	 * @returns The model name, or null to not use a model name.
 	 */
-	getModelName(_part: T): AgentModelName | null {
+	getModelName(_part: T): string | null {
 		// TODO: This should be extended to return some kind of priority or method for selecting which model to use if there are multiple prompt parts overriding this. Right now, in getModelName.ts, we just return the first model name that is not null.
 		return null
 	}

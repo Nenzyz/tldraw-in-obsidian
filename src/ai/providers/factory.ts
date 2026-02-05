@@ -55,6 +55,11 @@ export async function getProvider(providerName: AgentModelProvider): Promise<AIP
             provider = module.openaiProvider;
             break;
         }
+        case 'openai-compatible': {
+            const module = await import('./openai-compatible');
+            provider = module.openaiCompatibleProvider;
+            break;
+        }
         default: {
             // TypeScript should catch this at compile time, but runtime safety
             const exhaustiveCheck: never = providerName;
@@ -96,5 +101,5 @@ export function clearProviderCache(): void {
  * @returns true if the provider is supported
  */
 export function isProviderSupported(providerName: string): providerName is AgentModelProvider {
-    return providerName === 'anthropic' || providerName === 'google' || providerName === 'openai';
+    return providerName === 'anthropic' || providerName === 'google' || providerName === 'openai' || providerName === 'openai-compatible';
 }

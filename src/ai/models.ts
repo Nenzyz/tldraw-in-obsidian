@@ -1,7 +1,7 @@
 export const DEFAULT_MODEL_NAME = 'claude-4.5-sonnet'
 
 export type AgentModelName = keyof typeof AGENT_MODEL_DEFINITIONS
-export type AgentModelProvider = 'openai' | 'anthropic' | 'google'
+export type AgentModelProvider = 'openai' | 'anthropic' | 'google' | 'openai-compatible'
 
 export interface AgentModelDefinition {
 	name: AgentModelName
@@ -32,18 +32,41 @@ export function getAgentModelDefinition(modelName: AgentModelName): AgentModelDe
  * Get the provider for a given model ID.
  * Used for routing in streamAgent.
  * @param modelId - The model name/ID to look up.
- * @returns The provider for the model.
- * @throws Error if model is not found.
+ * @returns The provider for the model, or 'openai-compatible' for unknown models.
  */
 export function getProviderForModel(modelId: string): AgentModelProvider {
 	const modelNames = Object.keys(AGENT_MODEL_DEFINITIONS) as AgentModelName[]
 	const matchingModel = modelNames.find((name) => name === modelId)
 
 	if (!matchingModel) {
-		throw new Error(`Unknown model: ${modelId}`)
+		// Unknown models are assumed to be from openai-compatible provider (Ollama, etc.)
+		return 'openai-compatible'
 	}
 
 	return AGENT_MODEL_DEFINITIONS[matchingModel].provider
+}
+
+/**
+ * Check if a model name is a known predefined model.
+ */
+export function isKnownModel(modelName: string): modelName is AgentModelName {
+	return modelName in AGENT_MODEL_DEFINITIONS
+}
+
+/**
+ * Get model definition for known models, or create a dynamic definition for unknown models.
+ * Unknown models are assumed to be from the openai-compatible provider.
+ */
+export function getModelDefinition(modelName: string): AgentModelDefinition {
+	if (isKnownModel(modelName)) {
+		return AGENT_MODEL_DEFINITIONS[modelName]
+	}
+	// Dynamic model from openai-compatible provider
+	return {
+		name: modelName as AgentModelName,
+		id: modelName,
+		provider: 'openai-compatible',
+	}
 }
 
 /**

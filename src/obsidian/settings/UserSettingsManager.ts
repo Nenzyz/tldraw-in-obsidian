@@ -28,7 +28,9 @@ export default class UserSettingsManager {
     }
 
     #notifyStoreSubscribers() {
-        this.#subscribers.forEach((e) => e());
+        this.#subscribers.forEach((subscriber) => {
+            subscriber();
+        });
     }
 
     /**
@@ -44,6 +46,10 @@ export default class UserSettingsManager {
                 anthropic: { ...DEFAULT_AI_PROVIDER_SETTINGS },
                 google: { ...DEFAULT_AI_PROVIDER_SETTINGS },
                 openai: { ...DEFAULT_AI_PROVIDER_SETTINGS },
+                'openai-compatible': {
+                    ...DEFAULT_AI_PROVIDER_SETTINGS,
+                    baseUrl: DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl,
+                },
             },
             model: ai?.model ?? DEFAULT_SETTINGS.ai.model,
             showChatPanel: ai?.showChatPanel ?? DEFAULT_SETTINGS.ai.showChatPanel,
@@ -84,6 +90,11 @@ export default class UserSettingsManager {
                 openai: {
                     apiKey: ai.providers.openai?.apiKey ?? '',
                     availableModels: ai.providers.openai?.availableModels ?? [],
+                },
+                'openai-compatible': {
+                    apiKey: ai.providers['openai-compatible']?.apiKey ?? '',
+                    availableModels: ai.providers['openai-compatible']?.availableModels ?? [],
+                    baseUrl: ai.providers['openai-compatible']?.baseUrl ?? DEFAULT_SETTINGS.ai.providers['openai-compatible'].baseUrl,
                 },
             };
         }
@@ -421,6 +432,22 @@ export default class UserSettingsManager {
     }
 
     /**
+     * Update the base URL for a specific provider.
+     * @param provider - The provider to update
+     * @param baseUrl - The base URL to set
+     */
+    async updateAIProviderBaseUrl(provider: AgentModelProvider, baseUrl: string) {
+        const aiSettings = this.#ensureAISettings();
+        if (baseUrl === aiSettings.providers[provider]?.baseUrl) return;
+        aiSettings.providers[provider] = {
+            ...aiSettings.providers[provider],
+            baseUrl,
+        };
+        this.#plugin.settings.ai = Object.assign({}, aiSettings);
+        await this.updateSettings(this.#plugin.settings);
+    }
+
+    /**
      * Get the API key for a specific provider.
      * @param provider - The provider to get the API key for
      * @returns The API key, or empty string if not set
@@ -438,6 +465,18 @@ export default class UserSettingsManager {
     getAIProviderAvailableModels(provider: AgentModelProvider): AIModelInfo[] {
         const aiSettings = this.#plugin.settings.ai;
         return aiSettings?.providers?.[provider]?.availableModels ?? [];
+    }
+
+    /**
+     * Get the base URL for a specific provider.
+     * @param provider - The provider to get the base URL for
+     * @returns The base URL, or the default if not set
+     */
+    getAIProviderBaseUrl(provider: AgentModelProvider): string {
+        const aiSettings = this.#plugin.settings.ai;
+        return aiSettings?.providers?.[provider]?.baseUrl
+            ?? DEFAULT_SETTINGS.ai.providers[provider]?.baseUrl
+            ?? '';
     }
 
     // Custom Prompt and Schema Settings Methods

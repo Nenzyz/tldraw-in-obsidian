@@ -179,7 +179,7 @@ function formatModelName(modelId: string): string {
  * @param apiKey - The API key to test
  * @returns Connection result with success status and available models
  */
-export async function testOpenAIConnection(apiKey: string): Promise<ConnectionResult> {
+export async function testOpenAIConnection(apiKey: string, _baseUrl?: string): Promise<ConnectionResult> {
     if (!apiKey || !apiKey.trim()) {
         return { success: false, error: 'API key is required' };
     }
@@ -818,8 +818,8 @@ export const openaiProvider: AIProvider = {
         yield* streamAgentActions(options);
     },
 
-    async testConnection(apiKey: string): Promise<ConnectionResult> {
-        return testOpenAIConnection(apiKey);
+    async testConnection(apiKey: string, baseUrl?: string): Promise<ConnectionResult> {
+        return testOpenAIConnection(apiKey, baseUrl);
     },
 
     parseError(error: unknown): AIError {

@@ -26,3 +26,7 @@ data.json
 _input
 _local
 template-agent
+agent-os
+/.cursor
+/.opencode
+/.serena

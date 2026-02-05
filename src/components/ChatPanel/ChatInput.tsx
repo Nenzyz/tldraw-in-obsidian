@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
+import React, { useState, useRef, useEffect, useCallback, KeyboardEvent, useMemo } from 'react';
 import { Editor, useValue } from 'tldraw';
 import { TldrawAgent } from '../../ai/agent/TldrawAgent';
 import { AGENT_MODEL_DEFINITIONS, AgentModelName } from '../../ai/models';
@@ -6,6 +6,8 @@ import { AgentIcon, ChevronDownIcon } from './icons/AgentIcon';
 import { AtIcon } from './icons/AtIcon';
 import { SelectionTag } from './tags/SelectionTag';
 import { ContextItemTag } from './tags/ContextItemTag';
+import { useTldrawSettings } from 'src/contexts/tldraw-settings-context';
+import { DEFAULT_SETTINGS } from 'src/obsidian/TldrawSettingsTab';
 
 export interface ChatInputProps {
     agent: TldrawAgent;
@@ -50,6 +52,55 @@ const StopIcon = () => (
         <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
     </svg>
 );
+
+interface ModelSelectorProps {
+    modelName: string;
+    onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+}
+
+function ModelSelector({ modelName, onChange }: ModelSelectorProps) {
+    const { settings } = useTldrawSettings();
+    
+    const allModels = useMemo(() => {
+        const models: { id: string; name: string; provider: string }[] = [];
+        
+        Object.values(AGENT_MODEL_DEFINITIONS)
+            .filter((model) => !('hidden' in model && model.hidden))
+            .forEach((model) => {
+                models.push({ id: model.name, name: model.name, provider: model.provider });
+            });
+        
+        const ollamaModels = settings.ai?.providers?.['openai-compatible']?.availableModels ?? [];
+        ollamaModels.forEach((model: { id: string; displayName: string }) => {
+            if (!models.some(m => m.id === model.id)) {
+                models.push({ id: model.id, name: model.displayName, provider: 'openai-compatible' });
+            }
+        });
+        
+        return models;
+    }, [settings.ai?.providers]);
+
+    return (
+        <div className="ptl-chat-model-select">
+            <div className="ptl-chat-model-select-label">
+                <AgentIcon type="brain" />
+                <span>{modelName}</span>
+            </div>
+            <select
+                value={modelName}
+                onChange={onChange}
+                aria-label="Select AI model"
+            >
+                {allModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                        {model.name}
+                    </option>
+                ))}
+            </select>
+            <ChevronDownIcon />
+        </div>
+    );
+}
 
 // Context actions for the "Add Context" dropdown
 const ADD_CONTEXT_ACTIONS = [
@@ -146,7 +197,7 @@ export function ChatInput({
     }, [onCancel]);
 
     const handleModelChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-        agent.$modelName.set(event.target.value as AgentModelName);
+        agent.$modelName.set(event.target.value);
     }, [agent]);
 
     const handleContextSelectChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -245,26 +296,10 @@ export function ChatInput({
             {/* Actions Row with model selector */}
             <div className="ptl-chat-actions">
                 <div className="ptl-chat-actions-left">
-                    <div className="ptl-chat-model-select">
-                        <div className="ptl-chat-model-select-label">
-                            <AgentIcon type="brain" />
-                            <span>{modelName}</span>
-                        </div>
-                        <select
-                            value={modelName}
-                            onChange={handleModelChange}
-                            aria-label="Select AI model"
-                        >
-                            {Object.values(AGENT_MODEL_DEFINITIONS)
-                                .filter((model) => !('hidden' in model && model.hidden))
-                                .map((model) => (
-                                <option key={model.name} value={model.name}>
-                                    {model.name}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDownIcon />
-                    </div>
+                    <ModelSelector 
+                        modelName={modelName} 
+                        onChange={handleModelChange}
+                    />
                 </div>
             </div>
         </div>
