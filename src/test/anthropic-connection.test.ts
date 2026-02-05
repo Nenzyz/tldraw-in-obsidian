@@ -10,7 +10,7 @@ import {
 } from '../ai/anthropic-client';
 
 // Test API key - replace with your own for testing
-const TEST_API_KEY = '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';
+const TEST_API_KEY = 'sk-ant-api03-REDUCED';
 
 describe('Anthropic API Connection', () => {
     it('should connect and fetch available models', async () => {
