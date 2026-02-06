@@ -54,11 +54,27 @@ function formatModelName(modelId: string): string {
 
 const ACTION_PREFIX = /\[ACTION\]\s*:\s*/;
 
-function parseActionLines(text: string): Array<{ _type: string; [key: string]: unknown }> {
+/**
+ * Parses actions from text in either format:
+ * - JSON object: {"actions": [{...}, {...}]}
+ * - Line-based: [ACTION]: {...}
+ */
+function parseActions(text: string): Array<{ _type: string; [key: string]: unknown }> {
+    try {
+        const parsed = closeAndParseJson(text);
+        if (parsed && typeof parsed === 'object' && 'actions' in parsed && Array.isArray(parsed.actions)) {
+            return parsed.actions.filter(
+                (a: unknown): a is { _type: string; [key: string]: unknown } =>
+                    a !== null && typeof a === 'object' && '_type' in a
+            );
+        }
+    } catch {
+        // JSON object parse failed, try line-based
+    }
+
     const actions: Array<{ _type: string; [key: string]: unknown }> = [];
     const parts = text.split(ACTION_PREFIX);
 
-    // parts[0] is text before first [ACTION]: (e.g., [THOUGHT] block) — skip it
     for (let i = 1; i < parts.length; i++) {
         const jsonStr = parts[i].trim();
         if (!jsonStr) continue;
@@ -68,19 +84,19 @@ function parseActionLines(text: string): Array<{ _type: string; [key: string]: u
                 actions.push(parsed as { _type: string; [key: string]: unknown });
             }
         } catch {
-            // partial JSON — still accumulating
+            // Partial JSON, still accumulating
         }
     }
     return actions;
 }
 
 function stripCodeFence(text: string): string {
-    let stripped = text;
+    let stripped = text.trim();
     // Strip leading ```json or ```
     stripped = stripped.replace(/^```(?:json)?\s*\n?/, '');
     // Strip trailing ```
     stripped = stripped.replace(/\n?```\s*$/, '');
-    return stripped;
+    return stripped.trim();
 }
 
 function formatConnectionError(error: unknown): string {
@@ -390,7 +406,7 @@ export async function* streamAgentActions(
                 debugAgent('RECEIVE', `Received ${chunkCount} chunks, buffer length: ${buffer.length}`);
             }
 
-            const actions = parseActionLines(stripCodeFence(buffer));
+            const actions = parseActions(stripCodeFence(buffer));
             if (actions.length === 0) continue;
 
             // Yield completed actions we haven't yielded yet
@@ -418,7 +434,7 @@ export async function* streamAgentActions(
         }
 
         // Final pass: yield last action as complete
-        const finalActions = parseActionLines(stripCodeFence(buffer));
+        const finalActions = parseActions(stripCodeFence(buffer));
         if (finalActions.length > 0) {
             const lastAction = finalActions[finalActions.length - 1];
             if (lastAction) {
